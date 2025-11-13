@@ -40,7 +40,7 @@ class DroneInteractionDataset(Dataset):
             labels, flight ID, and timestamp.
     """
 
-    def __init__(self, trajectory_csv, relation_csv, lookback=50, device="cpu"):
+    def __init__(self, trajectory_csv, relation_csv, device, lookback=50):
         self.lookback = lookback
         self.device = device
 
