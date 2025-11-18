@@ -14,6 +14,7 @@ Dependencies:
 """
 
 import torch
+import os
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -87,7 +88,7 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
 
 
 @torch.no_grad()
-def evaluate_model(model, loader, device):
+def evaluate_model(model, loader, criterion, device):
     """
     Evaluate the model on validation/test data without computing gradients.
 
@@ -103,6 +104,7 @@ def evaluate_model(model, loader, device):
             - numpy.ndarray: True labels for all samples.
     """
     model.eval()
+    total_loss = 0.0
     all_logits, all_preds, all_labels = [], [], []
 
     for (
@@ -132,6 +134,10 @@ def evaluate_model(model, loader, device):
         logits = torch.cat(logits_list, dim=0).squeeze(-1)  # [total_num_pairs]
         labels = torch.cat(labels_list, dim=0)  # [total_num_pairs]
 
+        # Compute loss
+        loss = criterion(logits, labels)
+        total_loss += loss.item()
+
         # Predictions
         preds = (torch.sigmoid(logits) >= 0.5).long()
 
@@ -143,10 +149,10 @@ def evaluate_model(model, loader, device):
     all_preds = torch.cat(all_preds, dim=0)
     all_labels = torch.cat(all_labels, dim=0)
 
-    return all_logits, all_preds.numpy(), all_labels.numpy()
+    return all_logits, all_preds.numpy(), all_labels.numpy(), total_loss / len(loader)
 
 
-def calculate_evaluation_scores(labels, preds, probs, epoch):
+def calculate_evaluation_scores(labels, preds, probs, phase, logger, exp_dir):
     """
     Calculate and print evaluation metrics, plot confusion matrix,
     and save calibration plot.
@@ -155,7 +161,7 @@ def calculate_evaluation_scores(labels, preds, probs, epoch):
         labels (array-like or torch.Tensor): True binary labels.
         preds (array-like or torch.Tensor): Predicted binary labels.
         logits (array-like or torch.Tensor): Raw model logits (before sigmoid).
-        epoch (int): Current epoch number for naming saved plots.
+        phase (str): Identifier for the current evaluation stage, e.g. 'Epoch 5' or 'Test'.
 
     Returns:
         float: Accuracy score.
@@ -166,7 +172,7 @@ def calculate_evaluation_scores(labels, preds, probs, epoch):
     """
     # Handle edge case with no labels
     if len(labels) == 0:
-        print(f"Epoch {epoch}: No labels to evaluate.")
+        print(f"Epoch {phase}: No labels to evaluate.")
         return None
 
     # If inputs are tensors, convert to numpy
@@ -177,23 +183,26 @@ def calculate_evaluation_scores(labels, preds, probs, epoch):
     if hasattr(probs, "cpu"):
         probs = probs.cpu().numpy()
 
+    # Compute evaluation metrics
     accuracy = accuracy_score(labels, preds)
     precision = precision_score(labels, preds)
     recall = recall_score(labels, preds)
     f1 = f1_score(labels, preds)
     conf_matrix = confusion_matrix(labels, preds)
 
-    print(f"\n{epoch} Evaluation Metrics:")
-    print(
+    # Log evaluation metrics
+    logger.info(f"{phase} Evaluation Metrics:")
+    logger.info(
         f"Accuracy: {accuracy:.4f}, Precision: {precision:.4f}, Recall: {recall:.4f}, F1: {f1:.4f}"
     )
-    print(f"Confusion Matrix:\n{conf_matrix}")
+    logger.info(f"Confusion Matrix:\n{conf_matrix}")
 
     # Plot and save confusion matrix
     disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=[0, 1])
     disp.plot(cmap="Blues")
-    plt.title(f"Confusion Matrix - Epoch {epoch}")
-    plt.savefig(f"confusion_matrix_epoch_{epoch}.png")
+    plt.title(f"Confusion Matrix - Epoch {phase}")
+    conf_mat_path = os.path.join(exp_dir, f"confusion_matrix_epoch_{phase}.png")
+    plt.savefig(conf_mat_path)
     plt.close()
 
     # Calibration curve (reliability diagram)
@@ -203,10 +212,11 @@ def calculate_evaluation_scores(labels, preds, probs, epoch):
     plt.plot([0, 1], [0, 1], linestyle="--", color="gray", label="Perfectly calibrated")
     plt.xlabel("Mean Predicted Probability")
     plt.ylabel("Fraction of Positives")
-    plt.title(f"Calibration Curve - {epoch}")
+    plt.title(f"Calibration Curve - {phase}")
     plt.legend()
     plt.grid(True)
-    plt.savefig(f"calibration_curve_{epoch}.png")
+    calib_curve_path = os.path.join(exp_dir, f"calibration_curve_{phase}.png")
+    plt.savefig(calib_curve_path)
     plt.close()
 
     return accuracy
