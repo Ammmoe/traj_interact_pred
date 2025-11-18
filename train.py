@@ -110,8 +110,6 @@ logger.info(
     "Encoder module (unauthorized agents): %s", encoder_unauth.__class__.__module__
 )
 logger.info("Model module: %s", model.__class__.__module__)
-logger.info("Encoder architecture (friendly agents):\n%s", encoder_friendly)
-logger.info("Encoder architecture (unauthorized agents):\n%s", encoder_unauth)
 logger.info("Model architecture:\n%s", model)
 
 # Optimizer and loss function

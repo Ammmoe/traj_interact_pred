@@ -51,7 +51,7 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
         batch_agent_mask,
         pairs_list,
         labels_list,
-    ) in tqdm(loader, desc="Training", leave=True, ncols=200):
+    ) in tqdm(loader, desc="Training", leave=True, ncols=100):
         # Move tensors to device
         batch_trajectories = batch_trajectories.to(
             device
@@ -113,7 +113,7 @@ def evaluate_model(model, loader, criterion, device):
         batch_agent_mask,
         pairs_list,
         labels_list,
-    ) in tqdm(loader, desc="Evaluating", leave=True, ncols=200):
+    ) in tqdm(loader, desc="Evaluating", leave=True, ncols=100):
         # Move tensors to device
         batch_trajectories = batch_trajectories.to(
             device
