@@ -199,10 +199,119 @@ class DroneInteractionDataset(Dataset):
             torch.tensor(pairs, dtype=torch.long, device=self.device),  # [num_pairs, 2]
             torch.tensor(labels, dtype=torch.long, device=self.device),  # [num_pairs]
         )
-        
-        
+
+
 def collate_fn(batch):
-    batch_size = len(batch)
+    """
+    Custom collate function for DroneInteractionDataset.
+
+    This function takes a list of samples produced by the dataset, where each
+    sample consists of:
+        - trajectories: Tensor [lookback, num_agents, num_features]
+        - roles:        Tensor [num_agents]
+        - agent_mask:   Tensor [num_agents]
+        - pairs:        Tensor [num_pairs, 2]
+        - labels:       Tensor [num_pairs]
+
+    Because different samples may contain different numbers of agents,
+    this function pads the agent dimension of:
+        - trajectories
+        - roles
+        - agent_mask
+
+    Padding ensures that all samples in the batch have the same number of agents
+    (max_agents across the batch). The padded agents are filled with zeros and
+    masked out via the agent_mask.
+
+    The pair lists and label lists are **not padded** because each sample
+    may contain a different number of interaction pairs. They are therefore
+    returned as Python lists of tensors with varying shapes.
+
+    Returns:
+        batch_trajectories: Tensor
+            Shape [batch_size, lookback, max_agents, num_features]
+
+        batch_roles: Tensor
+            Shape [batch_size, max_agents]
+
+        batch_agent_mask: Tensor
+            Shape [batch_size, max_agents]
+
+        pairs_list: list of length batch_size
+            Each element is a Tensor [num_pairs, 2]
+
+        labels_list: list of length batch_size
+            Each element is a Tensor [num_pairs]
+    """
     lookback = batch[0][0].shape[0]
     max_agents = max(item[0].shape[1] for item in batch)
-    
+    num_features = batch[0][0].shape[2]
+
+    traj_list, roles_list, agent_mask_list, pairs_list, labels_list = [], [], [], [], []
+
+    for trajectories, roles, agent_mask, pairs, labels in batch:
+        num_agents = trajectories.shape[1]
+        pad_size = max_agents - num_agents
+
+        # Pad trajectories along agent dimension
+        if pad_size > 0:
+            pad_traj = torch.zeros(lookback, pad_size, num_features)
+            trajectories = torch.cat([trajectories, pad_traj], dim=1)
+            roles = torch.cat([roles, torch.zeros(pad_size, dtype=roles.dtype)])
+            agent_mask = torch.cat(
+                [agent_mask, torch.zeros(pad_size, dtype=agent_mask.dtype)]
+            )
+
+        traj_list.append(trajectories)
+        roles_list.append(roles)
+        agent_mask_list.append(agent_mask)
+        pairs_list.append(pairs)
+        labels_list.append(labels)
+
+    batch_trajectories = torch.stack(
+        traj_list, dim=0
+    )  # [batch_size, lookback, max_agents, num_features]
+    batch_roles = torch.stack(roles_list, dim=0)  # [batch_size, max_agents]
+    batch_agent_mask = torch.stack(agent_mask_list, dim=0)  # [batch_size, max_agents]
+
+    return batch_trajectories, batch_roles, batch_agent_mask, pairs_list, labels_list
+
+
+def load_datasets(
+    val_split, test_split, trajectory_csv, relation_csv, lookback, device, max_agents=6
+):
+    """
+    Load and split the DroneInteractionDataset into training, validation, and test subsets.
+
+    Args:
+        val_split (float): Proportion of the dataset to allocate to the validation set (e.g., 0.1 for 10%).
+        test_split (float): Proportion of the dataset to allocate to the test set (e.g., 0.1 for 10%).
+        trajectory_csv (str): Path to the CSV file containing trajectory data.
+        relation_csv (str): Path to the CSV file containing relation data.
+        lookback (int): Number of timesteps to consider in each sample window.
+        device (str): Device to load tensors on, e.g., "cpu" or "cuda".
+        max_agents (int, optional): Maximum number of agents expected per sample. Defaults to 6.
+
+    Returns:
+        tuple: A tuple containing three subsets of the dataset:
+            - train_set (torch.utils.data.Subset): Training subset.
+            - val_set (torch.utils.data.Subset): Validation subset.
+            - test_set (torch.utils.data.Subset): Test subset.
+    """
+    dataset = DroneInteractionDataset(
+        trajectory_csv=trajectory_csv,
+        relation_csv=relation_csv,
+        lookback=lookback,
+        device=device,
+        max_agents=max_agents,
+    )
+
+    dataset_length = len(dataset)
+    val_length = int(dataset_length * val_split)
+    test_length = int(dataset_length * test_split)
+    train_length = dataset_length - val_length - test_length
+
+    train_set, val_set, test_set = torch.utils.data.random_split(
+        dataset, [train_length, val_length, test_length]
+    )
+    return train_set, val_set, test_set

@@ -1,91 +1,94 @@
 import torch
 from tqdm import tqdm
-from models.pretrained_model_loader import extract_traj_embeddings
 
 
-def balance_pairs(relationships, labels, max_neg_per_pos=1):
-    pos_mask = labels == 1
-    neg_mask = labels == 0
-
-    pos_indices = torch.nonzero(pos_mask).squeeze(1)  # Indices of positive samples
-    neg_indices = torch.nonzero(neg_mask).squeeze(1)  # Indices of negative samples
-
-    num_pos = len(pos_indices)
-    num_neg = len(neg_indices)
-
-    if num_pos == 0 or num_neg == 0:
-        return relationships, labels  # Skip balancing if only one class present
-
-    # Sample negatives
-    num_keep_neg = min(num_neg, num_pos * max_neg_per_pos)
-    sampled_neg_indices = neg_indices[torch.randperm(num_neg)[:num_keep_neg]]
-
-    # Combine positive and sampled negative indices and shuffle
-    keep_indices = torch.cat([pos_indices, sampled_neg_indices])
-    keep_indices = keep_indices[torch.randperm(len(keep_indices))]
-
-    return relationships[keep_indices], labels[keep_indices]
-
-
-def train_epoch(
-    model, loader, optimizer, criterion, scaler_X, pretrained_model, config, device
-):
+def train_one_epoch(model, loader, optimizer, criterion, device):
     model.train()
-    pretrained_model.eval()  # pretrained model weights are frozen
     total_loss = 0.0
 
-    for batch in tqdm(loader, desc="Training", leave=True, ncols=100):
+    for (
+        batch_trajectories,
+        batch_roles,
+        batch_agent_mask,
+        pairs_list,
+        labels_list,
+    ) in tqdm(loader, desc="Training", leave=False):
+        # Move tensors to device
+        batch_trajectories = batch_trajectories.to(
+            device
+        )  # [batch_size, num_agents, lookback, feat_dim]
+        batch_roles = batch_roles.to(device)  # [batch_size, num_agents]
+        batch_agent_mask = batch_agent_mask.to(device)  # [batch_size, num_agents]
+        pairs_list = [
+            pair.to(device) for pair in pairs_list
+        ]  # [batch_size, num_pairs, 2]
+        labels_list = [
+            label.to(device) for label in labels_list
+        ]  # [batch_size, num_pairs]
+
         # Reset gradients
         optimizer.zero_grad()
-        batch_loss = 0.0
 
-        # Move tensors to device and process each sample in batch
-        context_window = batch["context_window"].to(
-            device
-        )  # [B, num_drones, lookback, feat_dim]
-        current_features = batch["current_features"].to(
-            device
-        )  # [B, num_drones, feat_dim]
-        relationships = batch["relationships"]  # [B, num_pairs, 2]
-        labels = batch["labels"]  # [B, num_pairs]
+        # Forward pass: return batch_size length list of [num_pairs_i, 1]
+        logits_list = model(batch_trajectories, pairs_list)
 
-        # Get features_per_agent from config
-        features_per_agent = config["FEATURES_PER_AGENT"]
+        # Pack into tensors for loss computation
+        logits = torch.cat(logits_list, dim=0).squeeze(-1)  # [total_num_pairs]
+        labels = torch.cat(labels_list, dim=0).float()  # [total_num_pairs]
 
-        batch_size = context_window.shape[0]  # Batch size
-
-        # Reshape for extracting trajectory embeddings
-        # Flatten num_drones and feat_dim for pretrained model input
-        traj_data = context_window[:, :, :, :features_per_agent].reshape(
-            batch_size, config["LOOK_BACK"], -1
-        )  # Exclude role_id
-
-        # Extract trajectory embeddings for entire batch
-        traj_embeddings = extract_traj_embeddings(
-            pretrained_model,
-            traj_data=traj_data,
-            scaler_X=scaler_X,
-            lookback=config["LOOK_BACK"],
-            features_per_agent=features_per_agent,
-            device=device,
-        )  # returns [batch_size, num_drones, embedding_dim]
-
-        for b in range(batch_size):  # Iterate over batch
-            rel = relationships[b].to(device)  # [num_pairs, 2]
-            label = labels[b].to(device)  # [num_pairs]
-
-            # Balance pairs per sample
-            balanced_rel, balanced_label = balance_pairs(rel, label, max_neg_per_pos=1)
-
-            preds = model(current_features[b], traj_embeddings[b], balanced_rel)
-            loss = criterion(preds, balanced_label)
-            batch_loss += loss
+        # Compute loss
+        loss = criterion(logits, labels)
 
         # Backpropagation
-        batch_loss /= batch_size  # Average loss over batch
-        batch_loss.backward()
+        loss.backward()
         optimizer.step()
 
-        total_loss += batch_loss.item()
+        total_loss += loss.item()
 
-    return total_loss / len(loader) # Average loss over all batches
+    return total_loss / len(loader)  # Average loss over all batches
+
+
+@torch.no_grad()
+def evaluate_model(model, loader, device):
+    model.eval()
+    all_logits, all_preds, all_labels = [], [], []
+
+    for (
+        batch_trajectories,
+        batch_roles,
+        batch_agent_mask,
+        pairs_list,
+        labels_list,
+    ) in tqdm(loader, desc="Evaluating", leave=False):
+        # Move tensors to device
+        batch_trajectories = batch_trajectories.to(
+            device
+        )  # [batch_size, num_agents, lookback, feat_dim]
+        batch_roles = batch_roles.to(device)  # [batch_size, num_agents]
+        batch_agent_mask = batch_agent_mask.to(device)  # [batch_size, num_agents]
+        pairs_list = [
+            pair.to(device) for pair in pairs_list
+        ]  # [batch_size, num_pairs, 2]
+        labels_list = [
+            label.to(device) for label in labels_list
+        ]  # [batch_size, num_pairs]
+
+        # Forward pass: return batch_size length list of [num_pairs_i, 1]
+        logits_list = model(batch_trajectories, pairs_list)
+
+        # Pack into tensors for metric computation
+        logits = torch.cat(logits_list, dim=0).squeeze(-1)  # [total_num_pairs]
+        labels = torch.cat(labels_list, dim=0)  # [total_num_pairs]
+
+        # Predictions
+        preds = (torch.sigmoid(logits) >= 0.5).long()
+        
+        all_logits.append(logits.cpu())
+        all_preds.append(preds.cpu())
+        all_labels.append(labels.cpu())
+
+    all_logits = torch.cat(all_logits, dim=0)
+    all_preds = torch.cat(all_preds, dim=0)
+    all_labels = torch.cat(all_labels, dim=0)
+
+    return all_logits, all_preds, all_labels

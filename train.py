@@ -1,51 +1,69 @@
 import torch
-import joblib
 from torch.utils.data import DataLoader
-from pathlib import Path
-from torch.utils.data import Subset
-from data.data_loader import DroneInteractionDataset
-from models.pretrained_model_loader import load_pretrained_traj_model
+from data.data_loader import load_datasets, collate_fn
+from models.bi_gru_encoder import TrajEmbeddingExtractor
+from models.dual_encoder_classifier import DualEncoderModel
+from utils.train_utils import train_one_epoch
 
 
-# Pretrained trajectory prediction model directory
-pretrained_model_dir = Path("experiments/20251112_170556")
+# Configuration
+BATCH_SIZE = 32
+EPOCHS = 50
+LR = 1e-3
+VAL_SPLIT = 0.15
+TEST_SPLIT = 0.15
+
+# Model parameters
+encoder_params = {
+    "input_size": 6,  # feature dimension
+    "enc_hidden_size": 64,
+    "dec_hidden_size": 64,
+    "num_layers": 1,
+}
+dual_encoder_embed_dim = 64
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Load dataset
-dataset = DroneInteractionDataset(
-    trajectory_csv="data/drone_states.csv",
-    relation_csv="data/drone_relations.csv",
-    device=device.type,
+# Load datasets
+train_set, val_set, test_set = load_datasets(
+    trajectory_csv="data/states.csv",
+    relation_csv="data/relations.csv",
+    val_split=VAL_SPLIT,
+    test_split=TEST_SPLIT,
     lookback=50,
+    device=device,
+    max_agents=6,
 )
 
-# Load model + config
-model, config = load_pretrained_traj_model(pretrained_model_dir, device)
+# DataLoaders ([B, num_drones, lookback, feat_dim])
+train_loader = DataLoader(
+    train_set, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn
+)
+val_loader = DataLoader(
+    val_set, batch_size=BATCH_SIZE, shuffle=False, collate_fn=collate_fn
+)
+test_loader = DataLoader(
+    test_set, batch_size=BATCH_SIZE, shuffle=False, collate_fn=collate_fn
+)
 
-# Load scalers
-scaler_X = joblib.load(pretrained_model_dir / "scaler_X.pkl")
+# Initialize trajectory encoders
+encoder_friendly = TrajEmbeddingExtractor(**encoder_params).to(device)
+encoder_unauth = TrajEmbeddingExtractor(**encoder_params).to(device)
 
-# Train test split
-flight_ids = dataset.flights
-num_train = int(0.8 * len(flight_ids))
-train_flights = flight_ids[:num_train]
-test_flights = flight_ids[num_train:]
+# Initialize dual encoder model
+model = DualEncoderModel(
+    encoder_friendly=encoder_friendly,
+    encoder_unauth=encoder_unauth,
+    embedding_dim=dual_encoder_embed_dim,
+).to(device)
 
-# Train and test indices
-train_indices = [
-    i for i, (fid, _) in enumerate(dataset.valid_indices) if fid in train_flights
-]
-test_indices = [
-    i for i, (fid, _) in enumerate(dataset.valid_indices) if fid in test_flights
-]
+# Optimizer and loss function
+optimizer = torch.optim.Adam(model.parameters(), lr=LR)
+criterion = torch.nn.BCEWithLogitsLoss()
 
-# Train and test datasets
-train_ds = Subset(dataset, train_indices)
-test_ds = Subset(dataset, test_indices)
-
-# Create dataloaders
-train_loader = DataLoader(train_ds, batch_size=32, shuffle=True)
-test_loader = DataLoader(test_ds, batch_size=32, shuffle=False)
-
-
+# Training loop
+best_val_acc = 0.0
+for epoch in range(EPOCHS):
+    train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
+    val_acc, val_cm = evaluate_model(model, val_loader, device)
+    
