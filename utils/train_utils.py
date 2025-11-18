@@ -22,6 +22,7 @@ from sklearn.metrics import (
     confusion_matrix,
     ConfusionMatrixDisplay,
 )
+from sklearn.calibration import calibration_curve
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
@@ -145,23 +146,36 @@ def evaluate_model(model, loader, device):
     return all_logits, all_preds.numpy(), all_labels.numpy()
 
 
-def print_evaluation_scores(labels, preds):
+def calculate_evaluation_scores(labels, preds, probs, epoch):
     """
-    Calculate and print evaluation metrics and plot confusion matrix.
+    Calculate and print evaluation metrics, plot confusion matrix,
+    and save calibration plot.
 
     Args:
         labels (array-like or torch.Tensor): True binary labels.
         preds (array-like or torch.Tensor): Predicted binary labels.
+        logits (array-like or torch.Tensor): Raw model logits (before sigmoid).
+        epoch (int): Current epoch number for naming saved plots.
+
+    Returns:
+        float: Accuracy score.
 
     Side Effects:
         Prints accuracy, precision, recall, and F1 scores.
-        Displays a confusion matrix plot.
+        Saves confusion matrix and calibration plots as PNG files.
     """
+    # Handle edge case with no labels
+    if len(labels) == 0:
+        print(f"Epoch {epoch}: No labels to evaluate.")
+        return None
+
     # If inputs are tensors, convert to numpy
     if hasattr(labels, "cpu"):
         labels = labels.cpu().numpy()
     if hasattr(preds, "cpu"):
         preds = preds.cpu().numpy()
+    if hasattr(probs, "cpu"):
+        probs = probs.cpu().numpy()
 
     accuracy = accuracy_score(labels, preds)
     precision = precision_score(labels, preds)
@@ -169,11 +183,30 @@ def print_evaluation_scores(labels, preds):
     f1 = f1_score(labels, preds)
     conf_matrix = confusion_matrix(labels, preds)
 
+    print(f"\n{epoch} Evaluation Metrics:")
     print(
         f"Accuracy: {accuracy:.4f}, Precision: {precision:.4f}, Recall: {recall:.4f}, F1: {f1:.4f}"
     )
+    print(f"Confusion Matrix:\n{conf_matrix}")
 
+    # Plot and save confusion matrix
     disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=[0, 1])
     disp.plot(cmap="Blues")
-    plt.title("Confusion Matrix")
-    plt.show()
+    plt.title(f"Confusion Matrix - Epoch {epoch}")
+    plt.savefig(f"confusion_matrix_epoch_{epoch}.png")
+    plt.close()
+
+    # Calibration curve (reliability diagram)
+    prob_true, prob_pred = calibration_curve(labels, probs, n_bins=10)
+
+    plt.plot(prob_pred, prob_true, marker="o", label="Model")
+    plt.plot([0, 1], [0, 1], linestyle="--", color="gray", label="Perfectly calibrated")
+    plt.xlabel("Mean Predicted Probability")
+    plt.ylabel("Fraction of Positives")
+    plt.title(f"Calibration Curve - {epoch}")
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(f"calibration_curve_{epoch}.png")
+    plt.close()
+
+    return accuracy
