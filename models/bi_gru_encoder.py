@@ -75,7 +75,7 @@ class TrajEmbeddingExtractor(nn.Module):
         if return_embedding:
             embeddings = []
             for agent_idx in range(num_agents):
-                hidden = self.encoder(src_agents[agent_idx])
+                _, hidden = self.encoder(src_agents[agent_idx])
                 # Combine bidirectional hidden states
                 hidden_cat = torch.cat(
                     [hidden[-2], hidden[-1]], dim=1

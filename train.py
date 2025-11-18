@@ -24,14 +24,14 @@ encoder_params = {
     "dec_hidden_size": 64,
     "num_layers": 1,
 }
-dual_encoder_embed_dim = 64
+dual_encoder_embed_dim = encoder_params["dec_hidden_size"]
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load datasets
 train_set, val_set, test_set = load_datasets(
-    trajectory_csv="data/states.csv",
-    relation_csv="data/relations.csv",
+    trajectory_csv="data/drone_states.csv",
+    relation_csv="data/drone_relations.csv",
     val_split=VAL_SPLIT,
     test_split=TEST_SPLIT,
     lookback=50,
