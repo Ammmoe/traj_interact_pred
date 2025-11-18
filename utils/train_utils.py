@@ -170,11 +170,6 @@ def calculate_evaluation_scores(labels, preds, probs, phase, logger, exp_dir):
         Prints accuracy, precision, recall, and F1 scores.
         Saves confusion matrix and calibration plots as PNG files.
     """
-    # Handle edge case with no labels
-    if len(labels) == 0:
-        print(f"Epoch {phase}: No labels to evaluate.")
-        return None
-
     # If inputs are tensors, convert to numpy
     if hasattr(labels, "cpu"):
         labels = labels.cpu().numpy()

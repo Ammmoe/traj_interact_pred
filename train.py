@@ -15,6 +15,7 @@ Dependencies: PyTorch, scikit-learn, matplotlib.
 
 import os
 import time
+import json
 import torch
 from torch.utils.data import DataLoader
 from data.data_loader import load_datasets, collate_fn
@@ -120,6 +121,7 @@ criterion = torch.nn.BCEWithLogitsLoss()
 # Training loop
 train_start_time = time.time()  # Training start time
 best_model_path = os.path.join(exp_dir, "best_model.pt")
+last_model_path = os.path.join(exp_dir, "last_model.pt")
 
 # Early stopping parameters
 best_val_acc = 0.0
@@ -127,36 +129,57 @@ patience = 5
 epochs_no_improve = 0
 early_stop = False
 
-for epoch in range(EPOCHS):
-    # Training step
-    train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
-    logger.info("Epoch %d/%d - Train Loss: %.6f", epoch + 1, EPOCHS, train_loss)
+try:
+    for epoch in range(EPOCHS):
+        # Training step
+        train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
+        logger.info("Epoch %d/%d - Train Loss: %.6f", epoch + 1, EPOCHS, train_loss)
 
-    # Evaluation step
-    logits, preds, labels, val_loss = evaluate_model(
-        model, val_loader, criterion, device
-    )
+        # Evaluation step
+        logits, preds, labels, val_loss = evaluate_model(
+            model, val_loader, criterion, device
+        )
 
-    # Log validation loss
-    logger.info(
-        "Epoch %d/%d - Validation Loss: %.6f",
-        epoch + 1,
-        EPOCHS,
-        val_loss,
-    )
+        # Log validation loss
+        logger.info(
+            "Epoch %d/%d - Validation Loss: %.6f",
+            epoch + 1,
+            EPOCHS,
+            val_loss,
+        )
 
-    # Calculate confidence scores from logits
-    confidences = torch.sigmoid(logits).numpy()
+        # Calculate confidence scores from logits
+        confidences = torch.sigmoid(logits).numpy()
 
-    # Calculate and print evaluation scores
-    accuracy = calculate_evaluation_scores(
-        labels, preds, confidences, f"Epoch {epoch + 1}", logger, exp_dir
-    )
+        # Calculate and print evaluation scores
+        accuracy = calculate_evaluation_scores(
+            labels, preds, confidences, f"Epoch {epoch + 1}", logger, exp_dir
+        )
 
-    # Save best model
-    if accuracy and accuracy > best_val_acc:
-        best_val_acc = accuracy
-        torch.save(model.state_dict(), best_model_path)
+        # Save best model
+        if accuracy > best_val_acc:
+            best_val_acc = accuracy
+            epochs_no_improve = 0
+            torch.save(model.state_dict(), best_model_path)
+        else:
+            epochs_no_improve += 1
+
+        # Trigger early stopping if no improvements in patience epochs
+        if epochs_no_improve >= patience:
+            logger.info("Early stopping triggered after %d epochs", epoch + 1)
+            early_stop = True
+            break
+
+except KeyboardInterrupt:
+    logger.warning("Training interrupted by user! Running evaluation...")
+
+# Save last-epoch model
+finally:
+    torch.save(model.state_dict(), last_model_path)
+
+# If training completed without early stopping
+if not early_stop:
+    logger.info("Training finished without early stopping.")
 
 # Log training time
 train_end_time = time.time()
@@ -189,3 +212,24 @@ logger.info(
 confidences = torch.sigmoid(logits).numpy()
 print("\nFinal Evaluation on Test Set:")
 calculate_evaluation_scores(labels, preds, confidences, "Test", logger, exp_dir)
+
+config = {
+    "device": str(device),
+    "model_module": model.__class__.__module__,
+    "model_class": model.__class__.__name__,
+    "encoder_module": encoder_friendly.__class__.__module__,
+    "encoder_class": encoder_friendly.__class__.__name__,
+    "encoder_params": encoder_params,
+    "MAX_AGENTS": MAX_AGENTS,
+    "LOOK_BACK": LOOKBACK,
+    "EPOCHS": EPOCHS,
+    "BATCH_SIZE": BATCH_SIZE,
+    "LEARNING_RATE": LR,
+}
+
+os.makedirs(exp_dir, exist_ok=True)
+config_path = os.path.join(exp_dir, "config.json")
+with open(config_path, "w", encoding="utf-8") as f:
+    json.dump(config, f, indent=4)
+
+logger.info("Config saved to %s", config_path)
