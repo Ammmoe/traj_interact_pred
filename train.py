@@ -3,7 +3,11 @@ from torch.utils.data import DataLoader
 from data.data_loader import load_datasets, collate_fn
 from models.bi_gru_encoder import TrajEmbeddingExtractor
 from models.dual_encoder_classifier import DualEncoderModel
-from utils.train_utils import train_one_epoch
+from utils.train_utils import (
+    train_one_epoch,
+    evaluate_model,
+    print_evaluation_scores,
+)
 
 
 # Configuration
@@ -65,5 +69,10 @@ criterion = torch.nn.BCEWithLogitsLoss()
 best_val_acc = 0.0
 for epoch in range(EPOCHS):
     train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
-    val_acc, val_cm = evaluate_model(model, val_loader, device)
-    
+    logits, preds, labels = evaluate_model(model, val_loader, device)
+
+    # Calculate confidence scores from logits
+    confidences = torch.sigmoid(logits).numpy()
+
+    # Calculate and print evaluation scores
+    print_evaluation_scores(labels, preds)
