@@ -1,4 +1,5 @@
 import torch
+import os
 from torch.utils.data import DataLoader
 from data.data_loader import load_datasets, collate_fn
 from models.bi_gru_encoder import TrajEmbeddingExtractor
@@ -8,6 +9,7 @@ from utils.train_utils import (
     evaluate_model,
     calculate_evaluation_scores,
 )
+from utils.logger import get_logger
 
 
 # Configuration
@@ -16,6 +18,8 @@ EPOCHS = 50
 LR = 1e-3
 VAL_SPLIT = 0.15
 TEST_SPLIT = 0.15
+MAX_AGENTS = 6
+LOOKBACK = 50
 
 # Model parameters
 encoder_params = {
@@ -28,15 +32,34 @@ dual_encoder_embed_dim = encoder_params["dec_hidden_size"]
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+# Setup logger and experiment folder
+logger, exp_dir = get_logger()
+os.makedirs(exp_dir, exist_ok=True)
+
 # Load datasets
 train_set, val_set, test_set = load_datasets(
     trajectory_csv="data/drone_states.csv",
     relation_csv="data/drone_relations.csv",
     val_split=VAL_SPLIT,
     test_split=TEST_SPLIT,
-    lookback=50,
+    lookback=LOOKBACK,
     device=device,
-    max_agents=6,
+    max_agents=MAX_AGENTS,
+)
+
+logger.info("Experiment started using device: %s", device)
+logger.info("Experiment folder: %s", exp_dir)
+logger.info(
+    "Total samples (sliding windows): %d", len(train_set) + len(val_set) + len(test_set)
+)
+logger.info(
+    "Train samples: %d, Val samples: %d, Test samples: %d",
+    len(train_set),
+    len(val_set),
+    len(test_set),
+)
+logger.info(
+    "Batch size: %d, Planned epochs: %d, Learning rate: %s", BATCH_SIZE, EPOCHS, LR
 )
 
 # DataLoaders ([B, num_drones, lookback, feat_dim])
@@ -60,6 +83,18 @@ model = DualEncoderModel(
     encoder_unauth=encoder_unauth,
     embedding_dim=dual_encoder_embed_dim,
 ).to(device)
+
+# Log model info
+logger.info(
+    "Encoder module (friendly agents): %s", encoder_friendly.__class__.__module__
+)
+logger.info(
+    "Encoder module (unauthorized agents): %s", encoder_unauth.__class__.__module__
+)
+logger.info("Model module: %s", model.__class__.__module__)
+logger.info("Encoder architecture (friendly agents):\n%s", encoder_friendly)
+logger.info("Encoder architecture (unauthorized agents):\n%s", encoder_unauth)
+logger.info("Model architecture:\n%s", model)
 
 # Optimizer and loss function
 optimizer = torch.optim.Adam(model.parameters(), lr=LR)

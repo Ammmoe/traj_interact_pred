@@ -108,8 +108,6 @@ class DroneInteractionDataset(Dataset):
             for start_idx in range(0, len(valid_timesteps) - self.lookback + 1, stride):
                 self.samples.append((fid, start_idx))
 
-        print(f"Total samples (sliding windows): {len(self.samples)}")
-
     def __len__(self):
         return len(self.samples)
 
