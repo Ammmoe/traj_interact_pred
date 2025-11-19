@@ -14,16 +14,16 @@ import torch.nn as nn
 
 class DualEncoderModel(nn.Module):
     """
-    Dual-encoder model for relation classification between pairs of agents in a multi-agent system.
+    Dual-encoder model for binary relation classification between agent pairs.
 
-    The model uses two separate encoders to embed trajectories of friendly and unauthorized agents.
-    It then constructs a relation vector by concatenating the embeddings and their element-wise interactions,
-    which is fed into a classifier to predict the binary relation.
+    Uses separate encoders for friendly and unauthorized agents to generate embeddings.
+    Relation vectors are formed by combining embeddings and their interactions,
+    then classified to predict relationships (e.g., "following" or "none").
 
     Args:
-        encoder_friendly (nn.Module): Encoder module for friendly agents.
-        encoder_unauth (nn.Module): Encoder module for unauthorized agents.
-        embedding_dim (int): Dimension of the output embedding for each agent.
+        encoder_friendly (nn.Module): Encoder for friendly agents.
+        encoder_unauth (nn.Module): Encoder for unauthorized agents.
+        embedding_dim (int): Dimension of the agent embeddings.
     """
 
     def __init__(self, encoder_friendly, encoder_unauth, embedding_dim):
@@ -40,17 +40,16 @@ class DualEncoderModel(nn.Module):
 
     def forward(self, batch_trajectories, batch_roles, pairs_list):
         """
-        Forward pass to classify relationships between agent pairs in the batch.
+        Predicts relation logits for given agent pairs in a batch.
 
         Args:
-            batch_trajectories (Tensor): Tensor of shape [batch_size, lookback, max_agents, feat_dim]
-                                        containing trajectories for all agents.
-            pairs_list (list of Tensors): List length batch_size, each element is a tensor of shape [num_pairs, 2]
-                                        specifying pairs of (friendly_agent_idx, unauthorized_agent_idx) for that batch item.
+            batch_trajectories (Tensor): [batch_size, lookback, max_agents, feat_dim] trajectories.
+            batch_roles (Tensor): [batch_size, max_agents] role labels (0=friendly, 1=unauthorized).
+            pairs_list (list of Tensors): Length batch_size; each tensor [num_pairs, 2] of
+                                        (friendly_id, unauth_id).
 
         Returns:
-            list of Tensors: List length batch_size, each tensor of shape [num_pairs, 1] containing
-                            logits for the relation classification of each pair.
+            list of Tensors: Length batch_size; each tensor [num_pairs, 1] of logits.
         """
         logits_all = []
         batch_size, lookback, _, feat_dim = batch_trajectories.shape

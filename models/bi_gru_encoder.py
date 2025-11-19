@@ -1,16 +1,15 @@
 """
 bi_gru_encoder.py
 
-Defines a bidirectional GRU-based encoder module to extract fixed-size embeddings from multi-agent trajectories.
+Bidirectional GRU encoder for extracting fixed-size embeddings from multi-agent trajectories.
 
-This module processes past trajectory sequences for multiple agents, encoding each agent's trajectory
-into a learned embedding vector. These embeddings can be used as input features for downstream tasks
-such as interaction classification, relation prediction, or trajectory clustering.
+Encodes each agent's past trajectory independently into learned embeddings suitable for
+downstream tasks like relation prediction or classification.
 
 Features:
     - Bidirectional GRU encoder
-    - Supports variable number of agents per batch by processing agents independently
-    - Projects concatenated forward and backward hidden states into a fixed embedding dimension
+    - Handles variable agent counts per batch
+    - Projects concatenated hidden states to fixed embedding size
 """
 
 import torch
@@ -19,21 +18,15 @@ from torch import nn
 
 class TrajEmbeddingExtractor(nn.Module):
     """
-    Extracts fixed-size embeddings for multi-agent trajectories using a bidirectional GRU encoder.
+    Encodes multi-agent trajectories into fixed-size embeddings using a bidirectional GRU.
 
-    This module processes past trajectory sequences per agent and outputs learned embeddings,
-    useful as input features for downstream tasks like classification or relation prediction.
-
-    Features:
-        - Bidirectional encoder GRU
-        - Projects concatenated forward and backward hidden states to a fixed embedding dimension
-        - Supports variable number of agents by processing each agent separately
+    Processes past trajectories per agent in parallel and outputs embeddings for downstream use.
 
     Args:
-        input_size (int): Number of input features per agent per timestep (e.g., 6 for pos + vel).
-        enc_hidden_size (int): Number of hidden units in the encoder GRU.
-        embed_dim (int): Output embedding dimension for each agent.
-        num_layers (int): Number of stacked GRU layers in the encoder.
+        input_size (int): Features per timestep per agent (e.g., 6 for position + velocity).
+        enc_hidden_size (int): Hidden units in GRU encoder.
+        embedding_dim (int): Output embedding dimension per agent.
+        num_layers (int): Number of stacked GRU layers.
     """
 
     def __init__(
@@ -57,15 +50,15 @@ class TrajEmbeddingExtractor(nn.Module):
 
     def forward(self, src):
         """
-        Extract embeddings for each agent's trajectory in the batch.
+        Encode trajectories into embeddings per agent.
 
         Args:
-            src: Tensor of shape [batch_size, seq_len, num_agents * input_size]
-                Input past trajectories concatenated along feature dimension for all agents.
+            src (Tensor): [batch_size, seq_len, num_agents * input_size]
+                Concatenated trajectories for all agents in the batch.
 
         Returns:
-            embeddings: Tensor of shape [batch_size, num_agents, embed_dim]
-                        Learned embeddings representing each agent's past trajectory.
+            Tensor: [batch_size, num_agents, embedding_dim]
+                Embeddings representing each agent's past trajectory.
         """
         batch_size, lookback, total_features = src.size()
         num_agents = total_features // self.input_size
@@ -84,9 +77,7 @@ class TrajEmbeddingExtractor(nn.Module):
         )  # [batch_size * num_agents, enc_hidden_size * 2]
 
         # Linear projection to embedding dimension
-        emb = self.enc_to_embed(
-            hidden_cat
-        )  # [batch_size * num_agents, embedding_dim]
+        emb = self.enc_to_embed(hidden_cat)  # [batch_size * num_agents, embedding_dim]
 
         # Reshape back to [batch_size, num_agents, embedding_dim]
         emb = emb.view(batch_size, num_agents, self.embedding_dim)
