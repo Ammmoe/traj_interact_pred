@@ -195,12 +195,12 @@ def calculate_evaluation_scores(labels, preds, probs, phase, logger, exp_dir):
     # Plot and save confusion matrix
     disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=[0, 1])
     disp.plot(cmap="Blues")
-    plt.title(f"Confusion Matrix - Epoch {phase}")
+    plt.title(f"Confusion Matrix - {phase}")
     # Create a new directory for saving confusion matrices
     conf_mat_dir = os.path.join(exp_dir, "confusion_matrices")
     os.makedirs(conf_mat_dir, exist_ok=True)
     # Save image to the confusion matrices directory
-    conf_mat_path = os.path.join(conf_mat_dir, f"confusion_matrix_epoch_{phase}.png")
+    conf_mat_path = os.path.join(conf_mat_dir, f"confusion_matrix_{phase}.png")
     plt.savefig(conf_mat_path)
     plt.close()
 

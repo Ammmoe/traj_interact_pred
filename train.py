@@ -30,8 +30,15 @@ from utils.logger import get_logger
 
 
 # pylint: disable=all
-RESUME_TRAINING = False
-RESUME_CHECKPOINT = "experiments/20251118_185620/checkpoint.pt"
+RESUME_TRAINING = True
+if RESUME_TRAINING:
+    exp_dir = "experiments/20251119_184413"
+    RESUME_CHECKPOINT = os.path.join(exp_dir, "checkpoint.pt")
+    logger, _ = get_logger(exp_dir=exp_dir)
+else:
+    # Setup logger and experiment folder
+    logger, exp_dir = get_logger()
+    os.makedirs(exp_dir, exist_ok=True)
 
 # Set deterministic seed for reproducibility
 SET_SEED = False
@@ -62,10 +69,6 @@ encoder_params = {
 dual_encoder_embed_dim = encoder_params["embedding_dim"]
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# Setup logger and experiment folder
-logger, exp_dir = get_logger()
-os.makedirs(exp_dir, exist_ok=True)
 
 # Load datasets
 train_set, val_set, test_set = load_datasets(
@@ -143,9 +146,9 @@ epochs_no_improve = 0
 early_stop = False
 
 # Resume logic
-if RESUME_TRAINING and os.path.exists(RESUME_CHECKPOINT):
+if RESUME_TRAINING and os.path.exists(RESUME_CHECKPOINT):  # type: ignore
     logger.info("Found checkpoint. Attempting to resume training...")
-    checkpoint = torch.load(RESUME_CHECKPOINT, map_location=device)
+    checkpoint = torch.load(RESUME_CHECKPOINT, map_location=device)  # type: ignore
     try:
         # Load checkpoint
         model.load_state_dict(checkpoint["model_state"])

@@ -21,7 +21,7 @@ import logging
 import os
 
 
-def get_logger(exp_root="experiments", log_name="train.log"):
+def get_logger(exp_root="experiments", log_name="train.log", exp_dir=None):
     """
     Set up a logger that writes logs to a timestamped experiment folder.
 
@@ -42,11 +42,15 @@ def get_logger(exp_root="experiments", log_name="train.log"):
 
     # Ensure root experiments folder exists
     os.makedirs(exp_root, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     # Create a timestamped experiment folder
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    exp_dir = os.path.join(exp_root, timestamp)
-    os.makedirs(exp_dir, exist_ok=True)
+    if exp_dir is None:
+        exp_dir = os.path.join(exp_root, timestamp)
+        os.makedirs(exp_dir, exist_ok=True)
+    else:
+        # Make sure folder exists
+        os.makedirs(exp_dir, exist_ok=True)
 
     # Setup logger
     logger = logging.getLogger(timestamp)
