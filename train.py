@@ -1,16 +1,16 @@
 """
 Training script for a dual-encoder Bi-GRU model to classify drone interactions.
 
-It loads and preprocesses datasets, initializes models and data loaders,
-trains the model with validation, and saves the best checkpoint.
-
-After training, it evaluates on the test set, logging loss, metrics,
-confusion matrices, calibration curves, and timing information.
-
-All logs and outputs are saved to a timestamped experiment directory
-for reproducibility and analysis.
-
-Dependencies: PyTorch, scikit-learn, matplotlib.
+Features:
+- Loads and preprocesses datasets from CSV files.
+- Initializes PyTorch models, data loaders, optimizer, and loss function.
+- Supports configurable training with validation and early stopping.
+- Saves the best model, last model, and periodic checkpoints for pause/resume.
+- Allows resuming training from saved checkpoints, preserving optimizer state.
+- Logs detailed training, validation, and test metrics, timing, and configuration.
+- Performs final evaluation on the test set with metrics and inference timing.
+- Saves experiment configuration for reproducibility.
+- Uses deterministic seeding optionally for reproducibility.
 """
 
 import os
@@ -30,6 +30,19 @@ from utils.logger import get_logger
 
 
 # pylint: disable=all
+RESUME_TRAINING = False
+RESUME_CHECKPOINT = "experiments/20251118_185620/checkpoint.pt"
+
+# Set deterministic seed for reproducibility
+SET_SEED = False
+if SET_SEED:
+    SEED = 42
+    torch.manual_seed(SEED)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(SEED)
+else:
+    SEED = None
+
 # Configuration
 BATCH_SIZE = 32
 EPOCHS = 50
@@ -120,15 +133,44 @@ criterion = torch.nn.BCEWithLogitsLoss()
 train_start_time = time.time()  # Training start time
 best_model_path = os.path.join(exp_dir, "best_model.pt")
 last_model_path = os.path.join(exp_dir, "last_model.pt")
+checkpoint_path = os.path.join(exp_dir, "checkpoint.pt")
 
 # Early stopping parameters
+start_epoch = 0
 best_val_acc = 0.0
 patience = 5
 epochs_no_improve = 0
 early_stop = False
 
+# Resume logic
+if RESUME_TRAINING and os.path.exists(RESUME_CHECKPOINT):
+    logger.info("Found checkpoint. Attempting to resume training...")
+    checkpoint = torch.load(RESUME_CHECKPOINT, map_location=device)
+    try:
+        # Load checkpoint
+        model.load_state_dict(checkpoint["model_state"])
+        optimizer.load_state_dict(checkpoint["optimizer_state"])
+        best_val_acc = checkpoint.get("best_val_acc", best_val_acc)
+        epochs_no_improve = checkpoint.get("epochs_no_improve", epochs_no_improve)
+        start_epoch = checkpoint.get("epoch", -1) + 1
+        logger.info("Resumed from checkpoint at epoch %d", start_epoch)
+    except KeyError as e:
+        # If checkpoint keys are missing
+        logger.warning(
+            "Checkpoint is missing expected keys: %s. Starting from scratch.", e
+        )
+else:
+    if RESUME_TRAINING:
+        # If checkpoint does not exist
+        logger.info(
+            "Resume requested but no checkpoint found. Starting training from scratch."
+        )
+    else:
+        # Start training from scratch
+        logger.info("Starting training from scratch.")
+
 try:
-    for epoch in range(EPOCHS):
+    for epoch in range(start_epoch, EPOCHS):
         # Training step
         train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
         logger.info("Epoch %d/%d - Train Loss: %.6f", epoch + 1, EPOCHS, train_loss)
@@ -162,6 +204,19 @@ try:
         else:
             epochs_no_improve += 1
 
+        # Save checkpoint each epoch (enables pause/resume)
+        torch.save(
+            {
+                "epoch": epoch,
+                "model_state": model.state_dict(),
+                "optimizer_state": optimizer.state_dict(),
+                "best_val_acc": best_val_acc,
+                "epochs_no_improve": epochs_no_improve,
+            },
+            checkpoint_path,
+        )
+        logger.info("Checkpoint saved at epoch %d", epoch + 1)
+
         # Trigger early stopping if no improvements in patience epochs
         if epochs_no_improve >= patience:
             logger.info("Early stopping triggered after %d epochs", epoch + 1)
@@ -185,7 +240,12 @@ training_time = train_end_time - train_start_time
 logger.info("Total training time: %.2f seconds", training_time)
 
 # Final evaluation on test set
-model.load_state_dict(torch.load(best_model_path))
+if os.path.exists(best_model_path):
+    model.load_state_dict(torch.load(best_model_path, map_location=device))
+    logger.info("Loaded best model for evaluation.")
+else:
+    model.load_state_dict(torch.load(last_model_path, map_location=device))
+    logger.info("Loaded last model for evaluation (best model not found).")
 
 # Test start time
 test_start_time = time.time()
@@ -208,7 +268,6 @@ logger.info(
 )
 
 confidences = torch.sigmoid(logits).numpy()
-print("\nFinal Evaluation on Test Set:")
 calculate_evaluation_scores(labels, preds, confidences, "Test", logger, exp_dir)
 
 config = {
@@ -223,6 +282,8 @@ config = {
     "EPOCHS": EPOCHS,
     "BATCH_SIZE": BATCH_SIZE,
     "LEARNING_RATE": LR,
+    "SET_SEED": SET_SEED,
+    "SEED": SEED,
 }
 
 os.makedirs(exp_dir, exist_ok=True)
