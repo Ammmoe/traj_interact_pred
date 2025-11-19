@@ -13,8 +13,8 @@ Dependencies:
 - tqdm for progress bars
 """
 
-import torch
 import os
+import torch
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -132,7 +132,7 @@ def evaluate_model(model, loader, criterion, device):
 
         # Pack into tensors for metric computation
         logits = torch.cat(logits_list, dim=0).squeeze(-1)  # [total_num_pairs]
-        labels = torch.cat(labels_list, dim=0)  # [total_num_pairs]
+        labels = torch.cat(labels_list, dim=0).float()  # [total_num_pairs]
 
         # Compute loss
         loss = criterion(logits, labels)
