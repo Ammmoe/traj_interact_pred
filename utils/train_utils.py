@@ -196,7 +196,11 @@ def calculate_evaluation_scores(labels, preds, probs, phase, logger, exp_dir):
     disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=[0, 1])
     disp.plot(cmap="Blues")
     plt.title(f"Confusion Matrix - Epoch {phase}")
-    conf_mat_path = os.path.join(exp_dir, f"confusion_matrix_epoch_{phase}.png")
+    # Create a new directory for saving confusion matrices
+    conf_mat_dir = os.path.join(exp_dir, "confusion_matrices")
+    os.makedirs(conf_mat_dir, exist_ok=True)
+    # Save image to the confusion matrices directory
+    conf_mat_path = os.path.join(conf_mat_dir, f"confusion_matrix_epoch_{phase}.png")
     plt.savefig(conf_mat_path)
     plt.close()
 
@@ -210,7 +214,11 @@ def calculate_evaluation_scores(labels, preds, probs, phase, logger, exp_dir):
     plt.title(f"Calibration Curve - {phase}")
     plt.legend()
     plt.grid(True)
-    calib_curve_path = os.path.join(exp_dir, f"calibration_curve_{phase}.png")
+    # Create a new directory for saving calibration curves
+    calib_curve_dir = os.path.join(exp_dir, "calibration_curves")
+    os.makedirs(calib_curve_dir, exist_ok=True)
+    # Save image to the claibration curve directory
+    calib_curve_path = os.path.join(calib_curve_dir, f"calibration_curve_{phase}.png")
     plt.savefig(calib_curve_path)
     plt.close()
 
