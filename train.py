@@ -81,6 +81,7 @@ train_set, val_set, test_set = load_datasets(
     max_agents=MAX_AGENTS,
 )
 
+logger.info("\n" + "="*80 + "\nStarting New Experiment\n" + "="*80)
 logger.info("Experiment started using device: %s", device)
 logger.info("Experiment folder: %s", exp_dir)
 logger.info(
