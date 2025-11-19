@@ -38,30 +38,7 @@ class DualEncoderModel(nn.Module):
             nn.Linear(embedding_dim, 1),  # binary classification: following or none
         )
 
-    def encode_agent(self, encoder, batch_trajectories, agent_id):
-        """
-        Extracts the embedding for a specific agent from the batch using the given encoder.
-
-        Args:
-            encoder (nn.Module): Encoder module to process agent trajectories.
-            batch_trajectories (Tensor): Tensor of shape [batch_size, lookback, max_agents, feat_dim]
-                                        containing trajectories for all agents in the batch.
-            agent_id (int): Index of the agent to extract embedding for.
-
-        Returns:
-            Tensor: Embedding tensor of shape [batch_size, embedding_dim] for the specified agent.
-        """
-        batch_size, lookback, max_agents, feat_dim = batch_trajectories.shape
-        batch_traj_reshaped = batch_trajectories.reshape(
-            batch_size, lookback, max_agents * feat_dim
-        )
-
-        emb_all = encoder(
-            batch_traj_reshaped, return_embedding=True
-        )  # [batch_size, max_agents, embedding_dim]
-        return emb_all[:, agent_id, :]
-
-    def forward(self, batch_trajectories, pairs_list):
+    def forward(self, batch_trajectories, batch_roles, pairs_list):
         """
         Forward pass to classify relationships between agent pairs in the batch.
 
@@ -76,27 +53,67 @@ class DualEncoderModel(nn.Module):
                             logits for the relation classification of each pair.
         """
         logits_all = []
+        batch_size, lookback, _, feat_dim = batch_trajectories.shape
 
-        for batch_i, pair in enumerate(pairs_list):
-            if len(pair) == 0:
+        for batch_i in range(batch_size):
+            roles = batch_roles[batch_i]  # [max_agents]
+
+            # Select agent indices by role: 0=friendly, 1=unauthorized
+            friendly_ids = (roles == 0).nonzero(as_tuple=True)[0]
+            unauth_ids = (roles == 1).nonzero(as_tuple=True)[0]
+
+            # Select trajectories for friendly and unauthorized agents
+            traj_friendly = batch_trajectories[
+                batch_i : batch_i + 1, :, friendly_ids, :
+            ]  # [1, lookback, num_friendly, feat_dim]
+            traj_unauth = batch_trajectories[
+                batch_i : batch_i + 1, :, unauth_ids, :
+            ]  # [1, lookback, num_unauth, feat_dim]
+
+            # Reshape for encoder input: [batch=1, lookback, num_agents * feat_dim]
+            num_friendly = traj_friendly.shape[2]
+            num_unauth = traj_unauth.shape[2]
+            friendly_input = traj_friendly.reshape(1, lookback, num_friendly * feat_dim)
+            unauth_input = traj_unauth.reshape(1, lookback, num_unauth * feat_dim)
+
+            # Encode once per role per batch sample
+            emb_friendly_all = self.encoder_friendly(
+                friendly_input
+            )  # [1, num_friendly, embed_dim]
+            emb_unauth_all = self.encoder_unauth(
+                unauth_input
+            )  # [1, num_unauth, embed_dim]
+
+            # Map original agent indices to embedding indices for lookup
+            friendly_id_map = {
+                orig.item(): idx for idx, orig in enumerate(friendly_ids)
+            }
+            unauth_id_map = {orig.item(): idx for idx, orig in enumerate(unauth_ids)}
+
+            # Compute logits for pairs
+            pairs = pairs_list[batch_i]
+            if len(pairs) == 0:
                 logits_all.append(torch.empty((0, 1), device=batch_trajectories.device))
                 continue
 
-            # Extract batch slice
-            batch_traj_i = batch_trajectories[batch_i : batch_i + 1]
-
             batch_logits = []
+            for friendly_id, unauth_id in pairs:
+                f_idx = friendly_id_map.get(friendly_id.item(), None)
+                u_idx = unauth_id_map.get(unauth_id.item(), None)
 
-            for friendly_id, unauth_id in pair:
-                # Encode friendly and unauthorized separately
-                emb_friendly = self.encode_agent(
-                    self.encoder_friendly, batch_traj_i, friendly_id
-                )
-                emb_unauth = self.encode_agent(
-                    self.encoder_unauth, batch_traj_i, unauth_id
-                )
+                # Actually None pairs are ommitted during data loading process
+                # This is just a safety net # (sigmoid(0) = 0.5)
+                if f_idx is None or u_idx is None:
+                    batch_logits.append(
+                        torch.zeros(1, 1, device=batch_trajectories.device)
+                    )
+                    continue
 
-                # Combine embeddings (standard relation vector)
+                emb_friendly = emb_friendly_all[0, f_idx, :].unsqueeze(
+                    0
+                )  # [1, embed_dim]
+                emb_unauth = emb_unauth_all[0, u_idx, :].unsqueeze(0)  # [1, embed_dim]
+
                 relation_vector = torch.cat(
                     [
                         emb_friendly,
@@ -107,12 +124,10 @@ class DualEncoderModel(nn.Module):
                     dim=-1,
                 )
 
-                # Classify relations
                 logit = self.classifier(relation_vector)  # [1, 1]
                 batch_logits.append(logit)
 
-            # Concatenate logits for the batch
             batch_logits = torch.cat(batch_logits, dim=0)  # [num_pairs, 1]
-            logits_all.append(batch_logits) # [batch_size length list of [num_pairs, 1]]
+            logits_all.append(batch_logits)
 
         return logits_all

@@ -69,7 +69,7 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
         optimizer.zero_grad()
 
         # Forward pass: return batch_size length list of [num_pairs_i, 1]
-        logits_list = model(batch_trajectories, pairs_list)
+        logits_list = model(batch_trajectories, batch_roles, pairs_list)
 
         # Pack into tensors for loss computation
         logits = torch.cat(logits_list, dim=0).squeeze(-1)  # [total_num_pairs]
@@ -128,7 +128,7 @@ def evaluate_model(model, loader, criterion, device):
         ]  # [batch_size, num_pairs]
 
         # Forward pass: return batch_size length list of [num_pairs_i, 1]
-        logits_list = model(batch_trajectories, pairs_list)
+        logits_list = model(batch_trajectories, batch_roles, pairs_list)
 
         # Pack into tensors for metric computation
         logits = torch.cat(logits_list, dim=0).squeeze(-1)  # [total_num_pairs]

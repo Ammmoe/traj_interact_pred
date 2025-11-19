@@ -56,10 +56,10 @@ LOOKBACK = 50
 encoder_params = {
     "input_size": 6,  # feature dimension
     "enc_hidden_size": 64,
-    "dec_hidden_size": 64,
+    "embedding_dim": 64,
     "num_layers": 1,
 }
-dual_encoder_embed_dim = encoder_params["dec_hidden_size"]
+dual_encoder_embed_dim = encoder_params["embedding_dim"]
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
