@@ -24,7 +24,7 @@ This repository provides a **training pipeline** for classifying drone interacti
 │   │   ├── best_model.pt        # Best model based on validation metrics
 │   │   ├── last_model.pt        # Final model after last epoch
 │   │   ├── config.json          # Saved configurations
-│   │   └── training.log         # Detailed train/validation logs
+│   │   └── train.log            # Detailed train/validation logs
 ├── requirements.txt
 └── README.md
 ```
@@ -56,12 +56,11 @@ The training pipeline:
 4. Feeds the embeddings into a **dual-encoder classifier**
 5. Trains with validation monitoring and optional early stopping
 6. Saves:
-
    * `best_model.pt`
    * `last_model.pt`
-   * periodic `checkpoint.pt`
+   * `checkpoint.pt`
    * `config.json`
-   * `training.log`
+   * `train.log`
 7. Performs final test-set evaluation
 
 ---
