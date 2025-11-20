@@ -28,8 +28,6 @@ The final forward and backward hidden states are concatenated and projected into
 
 ![Bi-GRU Encoder](Bi-GRU-Encoder.png)
 
----
-
 ## 📂 Directory Structure
 
 ```bash
@@ -68,6 +66,12 @@ conda activate drone_interact
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Install Git Large File Storage (Git LFS)
+git lfs install
+
+# Pull large files tracked by Git LFS (e.g., datasets)
+git lfs pull
 ```
 
 ---
