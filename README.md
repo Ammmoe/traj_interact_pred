@@ -4,6 +4,32 @@ This repository provides a **training pipeline** for classifying drone interacti
 
 ---
 
+## 🧠 Model Architecture
+
+### 🔷 Dual-Encoder Classifier (Full Model Overview)
+
+This architecture independently encodes the trajectories of two agent types using **Bi-GRU encoders**.  
+Their embeddings are then combined and passed into a classifier to predict the interaction type between the agent pair.
+
+> **Figure 1. Dual-Encoder Interaction Classifier**  
+> *(High-level overview of the full model)*
+
+![Dual Encoder Architecture](Dual-Encoder-Classifier.png)
+
+---
+
+### 🔷 Bi-GRU Encoder (Per-Agent Trajectory Encoder)
+
+Each encoder processes a sequence of agent states (e.g., position, velocity, orientation) using a **Bi-directional GRU**.  
+The final forward and backward hidden states are concatenated and projected into a fixed-size embedding vector.
+
+> **Figure 2. Bi-GRU Encoder Architecture**  
+> *(Structure of each encoder inside the dual-encoder model)*
+
+![Bi-GRU Encoder](Bi-GRU-Encoder.png)
+
+---
+
 ## 📂 Directory Structure
 
 ```bash
