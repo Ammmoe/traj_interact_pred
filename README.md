@@ -28,6 +28,8 @@ The final forward and backward hidden states are concatenated and projected into
 
 ![Bi-GRU Encoder](Bi-GRU-Encoder.png)
 
+---
+
 ## 📂 Directory Structure
 
 ```bash
