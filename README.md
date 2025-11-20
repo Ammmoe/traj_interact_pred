@@ -63,8 +63,8 @@ It is recommended to use a conda environment.
 
 ```bash
 # Create and activate the environment
-conda create -n drone_interact python=3.10
-conda activate drone_interact
+conda create -n traj_interact python=3.10
+conda activate traj_interact
 
 # Install dependencies
 pip install -r requirements.txt
