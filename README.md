@@ -8,23 +8,23 @@ This repository provides a **training pipeline** for classifying drone interacti
 
 ```bash
 .
-├── train.py                     # Main training script
+├── train.py                        # Main training script
 ├── models/
-│   ├── bi_gru_encoder.py        # Trajectory embedding encoder
-│   └── dual_encoder_classifier.py# Dual-encoder interaction classifier
+│   ├── bi_gru_encoder.py           # Trajectory embedding encoder
+│   └── dual_encoder_classifier.py  # Dual-encoder interaction classifier
 ├── data/
-│   ├── data_loader.py           # Dataset loader & preprocessing
-│   └── collate_fn.py
+│   ├── data_loader.py              # Dataset loader & preprocessing
+│   └── collate_fn.py               # Preprocess batching variable-length agent data
 ├── utils/
-│   ├── train_utils.py           # Training, evaluation, scoring helpers
-│   └── logger.py                # Logger with timestamped experiment folders
-├── experiments/                 # Automatically generated experiment folders
-│   ├── 20251119_184413/         # Example experiment folder
-│   │   ├── checkpoint.pt        # Saved checkpoint (supports resume training)
-│   │   ├── best_model.pt        # Best model based on validation metrics
-│   │   ├── last_model.pt        # Final model after last epoch
-│   │   ├── config.json          # Saved configurations
-│   │   └── train.log            # Detailed train/validation logs
+│   ├── train_utils.py              # Training, evaluation, scoring helpers
+│   └── logger.py                   # Logger with timestamped experiment folders
+├── experiments/                    # Automatically generated experiment folders
+│   ├── 20251119_184413/
+│   │   ├── checkpoint.pt           # Saved checkpoint (supports resume training)
+│   │   ├── best_model.pt           # Best model based on validation metrics
+│   │   ├── last_model.pt           # Final model after last epoch
+│   │   ├── config.json             # Saved configurations
+│   │   └── train.log               # Detailed train/validation logs
 ├── requirements.txt
 └── README.md
 ```
