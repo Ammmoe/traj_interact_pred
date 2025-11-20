@@ -30,7 +30,7 @@ from utils.logger import get_logger
 
 
 # pylint: disable=all
-RESUME_TRAINING = True
+RESUME_TRAINING = False
 if RESUME_TRAINING:
     exp_dir = "experiments/20251119_184413"
     RESUME_CHECKPOINT = os.path.join(exp_dir, "checkpoint.pt")

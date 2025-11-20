@@ -56,11 +56,11 @@ The training pipeline:
 4. Feeds the embeddings into a **dual-encoder classifier**
 5. Trains with validation monitoring and optional early stopping
 6. Saves:
-   * `best_model.pt`
-   * `last_model.pt`
-   * `checkpoint.pt`
-   * `config.json`
-   * `train.log`
+   - `best_model.pt`
+   - `last_model.pt`
+   - `checkpoint.pt`
+   - `config.json`
+   - `train.log`
 7. Performs final test-set evaluation
 
 ---
@@ -70,13 +70,13 @@ The training pipeline:
 Key parameters inside `train.py`:
 
 ```python
-BATCH_SIZE = 32
-EPOCHS = 50
-LR = 1e-3
-VAL_SPLIT = 0.15
-TEST_SPLIT = 0.15
-MAX_AGENTS = 6
-LOOKBACK = 50
+BATCH_SIZE = 32     # Number of samples per training batch
+EPOCHS = 50         # Total training iterations over the full dataset
+LR = 1e-3           # Learning rate for the optimizer
+VAL_SPLIT = 0.15    # Percentage of data reserved for validation during training
+TEST_SPLIT = 0.15   # Percentage of data reserved for final testing
+MAX_AGENTS = 6      # Maximum number of agents considered per sample for interaction prediction
+LOOKBACK = 50       # Number of past trajectory timesteps used to classify interactions
 ```
 
 Encoder parameters:
@@ -88,12 +88,6 @@ encoder_params = {
     "embedding_dim": 64,
     "num_layers": 1,
 }
-```
-
-Device selection:
-
-```python
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 ```
 
 ---
@@ -128,10 +122,10 @@ RESUME_CHECKPOINT = os.path.join(exp_dir, "checkpoint.pt")
 
 This restores:
 
-* Model weights
-* Optimizer state
-* Epoch number
-* Training progress
+- Model weights
+- Optimizer state
+- Epoch number
+- Training progress
 
 Training continues automatically from the saved checkpoint.
 
@@ -141,9 +135,9 @@ Training continues automatically from the saved checkpoint.
 
 After training completes, the script:
 
-* Evaluates on the test set
-* Computes classification metrics (accuracy, precision, recall, F1)
-* Logs results to `training.log`
-* Stores metrics in `config.json`
+- Evaluates on the test set
+- Computes classification metrics (accuracy, precision, recall, F1)
+- Logs results to `training.log`
+- Stores experiment configurations in `config.json`
 
 All outputs are saved inside the experiment folder.
