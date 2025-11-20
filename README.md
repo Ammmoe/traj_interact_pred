@@ -14,9 +14,7 @@ Their embeddings are then combined and passed into a classifier to predict the i
 > **Figure 1. Dual-Encoder Interaction Classifier**  
 > *(High-level overview of the full model)*
 
-<p align="center">
-  <img src="Dual-Encoder-Classifier.png" alt="Dual Encoder Architecture" width="400"/>
-</p>
+![Dual Encoder Architecture](Dual-Encoder-Classifier.png)
 
 ---
 
@@ -28,9 +26,7 @@ The final forward and backward hidden states are concatenated and projected into
 > **Figure 2. Bi-GRU Encoder Architecture**  
 > *(Structure of each encoder inside the dual-encoder model)*
 
-<p align="center">
-  <img src="Bi-GRU-Encoder.png" alt="Bi-GRU Encoder" />
-</p>
+![Bi-GRU Encoder](Bi-GRU-Encoder.png)
 
 ---
 
