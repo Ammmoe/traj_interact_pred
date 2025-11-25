@@ -34,23 +34,37 @@ The final forward and backward hidden states are concatenated and projected into
 
 ```bash
 .
-├── train.py                        # Main training script
-├── models/
-│   ├── bi_gru_encoder.py           # Trajectory embedding encoder
-│   └── dual_encoder_classifier.py  # Dual-encoder interaction classifier
-├── data/
-│   ├── data_loader.py              # Dataset loader & preprocessing
-│   └── collate_fn.py               # Preprocess batching variable-length agent data
-├── utils/
-│   ├── train_utils.py              # Training, evaluation, scoring helpers
-│   └── logger.py                   # Logger with timestamped experiment folders
-├── experiments/                    # Automatically generated experiment folders
-│   ├── 20251119_184413/
-│   │   ├── checkpoint.pt           # Saved checkpoint (supports resume training)
-│   │   ├── best_model.pt           # Best model based on validation metrics
-│   │   ├── last_model.pt           # Final model after last epoch
-│   │   ├── config.json             # Saved configurations
-│   │   └── train.log               # Detailed train/validation logs
+├── scripts/
+│   └── train.py                       # Main training script
+│
+├── traj_interact_predict/
+│   ├── __init__.py
+│   ├── data/
+│   │   ├── data_loader.py             # Dataset loading & preprocessing
+│   │   └── collate_fn.py              # Collation for variable-length agent data
+│   │
+│   ├── models/
+│   │   ├── bi_gru_encoder.py          # Bi-GRU trajectory encoder
+│   │   └── dual_encoder_classifier.py # Dual-encoder classifier
+│   │
+│   └── utils/
+│       ├── train_utils.py             # Training, evaluation, scoring utilities
+│       └── logger.py                  # Logging + experiment folder setup
+│
+├── notebooks/                         # Jupyter notebooks for analysis & experiments
+│   └── (exploratory analysis)
+│
+├── tests/                             # Unit tests for models, data pipeline, utils
+│   └── (pytest-based test files)
+│
+├── experiments/                       # Auto-generated experiment folders
+│   ├── 20251120_113146/
+│   │   ├── checkpoint.pt
+│   │   ├── best_model.pt
+│   │   ├── last_model.pt
+│   │   ├── config.json
+│   │   └── train.log
+│
 ├── requirements.txt
 └── README.md
 ```
@@ -129,7 +143,7 @@ encoder_params = {
 To start a new training run:
 
 ```bash
-python train.py
+python -m scripts.train
 ```
 
 A new folder is automatically created inside `experiments/`:
