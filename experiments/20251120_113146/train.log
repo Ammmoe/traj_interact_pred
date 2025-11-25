@@ -1,0 +1,194 @@
+2025-11-20 11:31:46,340 - INFO - 
+================================================================================
+Starting New Experiment
+================================================================================
+2025-11-20 11:31:46,340 - INFO - Experiment started using device: cpu
+2025-11-20 11:31:46,340 - INFO - Experiment folder: experiments/20251120_113146
+2025-11-20 11:31:46,340 - INFO - Total samples (sliding windows): 27266
+2025-11-20 11:31:46,340 - INFO - Train samples: 19088, Val samples: 4089, Test samples: 4089
+2025-11-20 11:31:46,340 - INFO - Batch size: 32, Planned epochs: 50, Learning rate: 0.001
+2025-11-20 11:31:46,346 - INFO - Encoder module (friendly agents): models.bi_gru_encoder
+2025-11-20 11:31:46,346 - INFO - Encoder module (unauthorized agents): models.bi_gru_encoder
+2025-11-20 11:31:46,346 - INFO - Model module: models.dual_encoder_classifier
+2025-11-20 11:31:46,346 - INFO - Model architecture:
+DualEncoderModel(
+  (encoder_friendly): TrajEmbeddingExtractor(
+    (encoder): GRU(6, 64, batch_first=True, bidirectional=True)
+    (enc_to_embed): Linear(in_features=128, out_features=64, bias=True)
+  )
+  (encoder_unauth): TrajEmbeddingExtractor(
+    (encoder): GRU(6, 64, batch_first=True, bidirectional=True)
+    (enc_to_embed): Linear(in_features=128, out_features=64, bias=True)
+  )
+  (classifier): Sequential(
+    (0): Linear(in_features=256, out_features=64, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=64, out_features=1, bias=True)
+  )
+)
+2025-11-20 11:31:47,192 - INFO - Starting training from scratch.
+2025-11-20 11:48:07,766 - INFO - Epoch 1/50 - Train Loss: 0.288760
+2025-11-20 11:50:28,827 - INFO - Epoch 1/50 - Validation Loss: 0.121484
+2025-11-20 11:50:28,912 - INFO - Epoch 1 Evaluation Metrics:
+2025-11-20 11:50:28,912 - INFO - Accuracy: 0.9529, Precision: 0.9040, Recall: 0.9606, F1: 0.9315
+2025-11-20 11:50:28,912 - INFO - Confusion Matrix:
+[[23283  1251]
+ [  483 11784]]
+2025-11-20 11:50:29,244 - INFO - Checkpoint saved at epoch 1
+2025-11-20 12:06:35,172 - INFO - Epoch 2/50 - Train Loss: 0.088608
+2025-11-20 12:08:52,619 - INFO - Epoch 2/50 - Validation Loss: 0.071512
+2025-11-20 12:08:52,699 - INFO - Epoch 2 Evaluation Metrics:
+2025-11-20 12:08:52,699 - INFO - Accuracy: 0.9745, Precision: 0.9379, Recall: 0.9891, F1: 0.9628
+2025-11-20 12:08:52,699 - INFO - Confusion Matrix:
+[[23730   804]
+ [  134 12133]]
+2025-11-20 12:08:52,800 - INFO - Checkpoint saved at epoch 2
+2025-11-20 12:24:51,817 - INFO - Epoch 3/50 - Train Loss: 0.045423
+2025-11-20 12:27:09,674 - INFO - Epoch 3/50 - Validation Loss: 0.040661
+2025-11-20 12:27:09,753 - INFO - Epoch 3 Evaluation Metrics:
+2025-11-20 12:27:09,753 - INFO - Accuracy: 0.9843, Precision: 0.9796, Recall: 0.9731, F1: 0.9764
+2025-11-20 12:27:09,753 - INFO - Confusion Matrix:
+[[24286   248]
+ [  330 11937]]
+2025-11-20 12:27:09,857 - INFO - Checkpoint saved at epoch 3
+2025-11-20 12:43:14,058 - INFO - Epoch 4/50 - Train Loss: 0.032514
+2025-11-20 12:45:31,323 - INFO - Epoch 4/50 - Validation Loss: 0.026120
+2025-11-20 12:45:31,405 - INFO - Epoch 4 Evaluation Metrics:
+2025-11-20 12:45:31,405 - INFO - Accuracy: 0.9887, Precision: 0.9775, Recall: 0.9888, F1: 0.9831
+2025-11-20 12:45:31,405 - INFO - Confusion Matrix:
+[[24255   279]
+ [  137 12130]]
+2025-11-20 12:45:31,516 - INFO - Checkpoint saved at epoch 4
+2025-11-20 13:01:40,525 - INFO - Epoch 5/50 - Train Loss: 0.022838
+2025-11-20 13:03:59,479 - INFO - Epoch 5/50 - Validation Loss: 0.011026
+2025-11-20 13:03:59,562 - INFO - Epoch 5 Evaluation Metrics:
+2025-11-20 13:03:59,562 - INFO - Accuracy: 0.9967, Precision: 0.9925, Recall: 0.9976, F1: 0.9950
+2025-11-20 13:03:59,562 - INFO - Confusion Matrix:
+[[24442    92]
+ [   30 12237]]
+2025-11-20 13:03:59,673 - INFO - Checkpoint saved at epoch 5
+2025-11-20 13:20:06,813 - INFO - Epoch 6/50 - Train Loss: 0.025000
+2025-11-20 13:22:24,499 - INFO - Epoch 6/50 - Validation Loss: 0.041711
+2025-11-20 13:22:24,575 - INFO - Epoch 6 Evaluation Metrics:
+2025-11-20 13:22:24,575 - INFO - Accuracy: 0.9842, Precision: 0.9907, Recall: 0.9615, F1: 0.9759
+2025-11-20 13:22:24,575 - INFO - Confusion Matrix:
+[[24423   111]
+ [  472 11795]]
+2025-11-20 13:22:24,675 - INFO - Checkpoint saved at epoch 6
+2025-11-20 13:38:27,481 - INFO - Epoch 7/50 - Train Loss: 0.017787
+2025-11-20 13:40:47,982 - INFO - Epoch 7/50 - Validation Loss: 0.020828
+2025-11-20 13:40:48,058 - INFO - Epoch 7 Evaluation Metrics:
+2025-11-20 13:40:48,058 - INFO - Accuracy: 0.9933, Precision: 0.9820, Recall: 0.9983, F1: 0.9901
+2025-11-20 13:40:48,058 - INFO - Confusion Matrix:
+[[24309   225]
+ [   21 12246]]
+2025-11-20 13:40:48,159 - INFO - Checkpoint saved at epoch 7
+2025-11-20 13:56:55,476 - INFO - Epoch 8/50 - Train Loss: 0.012150
+2025-11-20 13:59:08,797 - INFO - Epoch 8/50 - Validation Loss: 0.014015
+2025-11-20 13:59:08,874 - INFO - Epoch 8 Evaluation Metrics:
+2025-11-20 13:59:08,874 - INFO - Accuracy: 0.9949, Precision: 0.9963, Recall: 0.9883, F1: 0.9923
+2025-11-20 13:59:08,874 - INFO - Confusion Matrix:
+[[24489    45]
+ [  143 12124]]
+2025-11-20 13:59:08,975 - INFO - Checkpoint saved at epoch 8
+2025-11-20 14:35:38,525 - INFO - Epoch 9/50 - Train Loss: 0.014692
+2025-11-20 14:37:49,972 - INFO - Epoch 9/50 - Validation Loss: 0.025050
+2025-11-20 14:37:50,047 - INFO - Epoch 9 Evaluation Metrics:
+2025-11-20 14:37:50,047 - INFO - Accuracy: 0.9918, Precision: 0.9882, Recall: 0.9872, F1: 0.9877
+2025-11-20 14:37:50,047 - INFO - Confusion Matrix:
+[[24389   145]
+ [  157 12110]]
+2025-11-20 14:37:50,151 - INFO - Checkpoint saved at epoch 9
+2025-11-20 14:53:16,121 - INFO - Epoch 10/50 - Train Loss: 0.014885
+2025-11-20 14:55:29,349 - INFO - Epoch 10/50 - Validation Loss: 0.005566
+2025-11-20 14:55:29,426 - INFO - Epoch 10 Evaluation Metrics:
+2025-11-20 14:55:29,426 - INFO - Accuracy: 0.9980, Precision: 0.9957, Recall: 0.9983, F1: 0.9970
+2025-11-20 14:55:29,426 - INFO - Confusion Matrix:
+[[24481    53]
+ [   21 12246]]
+2025-11-20 14:55:29,522 - INFO - Checkpoint saved at epoch 10
+2025-11-20 15:11:21,977 - INFO - Epoch 11/50 - Train Loss: 0.015835
+2025-11-20 15:13:35,499 - INFO - Epoch 11/50 - Validation Loss: 0.007850
+2025-11-20 15:13:35,576 - INFO - Epoch 11 Evaluation Metrics:
+2025-11-20 15:13:35,576 - INFO - Accuracy: 0.9969, Precision: 0.9925, Recall: 0.9982, F1: 0.9953
+2025-11-20 15:13:35,576 - INFO - Confusion Matrix:
+[[24441    93]
+ [   22 12245]]
+2025-11-20 15:13:35,671 - INFO - Checkpoint saved at epoch 11
+2025-11-20 15:29:28,194 - INFO - Epoch 12/50 - Train Loss: 0.007215
+2025-11-20 15:31:42,557 - INFO - Epoch 12/50 - Validation Loss: 0.007550
+2025-11-20 15:31:42,638 - INFO - Epoch 12 Evaluation Metrics:
+2025-11-20 15:31:42,638 - INFO - Accuracy: 0.9977, Precision: 0.9957, Recall: 0.9974, F1: 0.9965
+2025-11-20 15:31:42,639 - INFO - Confusion Matrix:
+[[24481    53]
+ [   32 12235]]
+2025-11-20 15:31:42,737 - INFO - Checkpoint saved at epoch 12
+2025-11-20 15:47:34,323 - INFO - Epoch 13/50 - Train Loss: 0.013151
+2025-11-20 15:49:46,038 - INFO - Epoch 13/50 - Validation Loss: 0.012437
+2025-11-20 15:49:46,120 - INFO - Epoch 13 Evaluation Metrics:
+2025-11-20 15:49:46,121 - INFO - Accuracy: 0.9962, Precision: 0.9895, Recall: 0.9993, F1: 0.9944
+2025-11-20 15:49:46,121 - INFO - Confusion Matrix:
+[[24404   130]
+ [    9 12258]]
+2025-11-20 15:49:46,220 - INFO - Checkpoint saved at epoch 13
+2025-11-20 16:10:57,137 - INFO - Epoch 14/50 - Train Loss: 0.011599
+2025-11-20 16:13:13,981 - INFO - Epoch 14/50 - Validation Loss: 0.001177
+2025-11-20 16:13:14,062 - INFO - Epoch 14 Evaluation Metrics:
+2025-11-20 16:13:14,062 - INFO - Accuracy: 1.0000, Precision: 0.9999, Recall: 1.0000, F1: 1.0000
+2025-11-20 16:13:14,062 - INFO - Confusion Matrix:
+[[24533     1]
+ [    0 12267]]
+2025-11-20 16:13:14,162 - INFO - Checkpoint saved at epoch 14
+2025-11-20 16:29:10,619 - INFO - Epoch 15/50 - Train Loss: 0.009030
+2025-11-20 16:31:31,502 - INFO - Epoch 15/50 - Validation Loss: 0.142099
+2025-11-20 16:31:31,579 - INFO - Epoch 15 Evaluation Metrics:
+2025-11-20 16:31:31,579 - INFO - Accuracy: 0.9478, Precision: 0.9404, Recall: 0.9004, F1: 0.9200
+2025-11-20 16:31:31,579 - INFO - Confusion Matrix:
+[[23834   700]
+ [ 1222 11045]]
+2025-11-20 16:31:31,801 - INFO - Checkpoint saved at epoch 15
+2025-11-20 16:47:41,199 - INFO - Epoch 16/50 - Train Loss: 0.005835
+2025-11-20 16:50:00,118 - INFO - Epoch 16/50 - Validation Loss: 0.000997
+2025-11-20 16:50:00,200 - INFO - Epoch 16 Evaluation Metrics:
+2025-11-20 16:50:00,200 - INFO - Accuracy: 0.9996, Precision: 0.9993, Recall: 0.9995, F1: 0.9994
+2025-11-20 16:50:00,200 - INFO - Confusion Matrix:
+[[24526     8]
+ [    6 12261]]
+2025-11-20 16:50:00,305 - INFO - Checkpoint saved at epoch 16
+2025-11-20 17:06:00,160 - INFO - Epoch 17/50 - Train Loss: 0.014170
+2025-11-20 17:08:18,099 - INFO - Epoch 17/50 - Validation Loss: 0.008322
+2025-11-20 17:08:18,179 - INFO - Epoch 17 Evaluation Metrics:
+2025-11-20 17:08:18,179 - INFO - Accuracy: 0.9970, Precision: 0.9960, Recall: 0.9950, F1: 0.9955
+2025-11-20 17:08:18,179 - INFO - Confusion Matrix:
+[[24485    49]
+ [   61 12206]]
+2025-11-20 17:08:18,283 - INFO - Checkpoint saved at epoch 17
+2025-11-20 17:24:10,810 - INFO - Epoch 18/50 - Train Loss: 0.009256
+2025-11-20 17:26:25,491 - INFO - Epoch 18/50 - Validation Loss: 0.000983
+2025-11-20 17:26:25,567 - INFO - Epoch 18 Evaluation Metrics:
+2025-11-20 17:26:25,567 - INFO - Accuracy: 0.9997, Precision: 0.9992, Recall: 1.0000, F1: 0.9996
+2025-11-20 17:26:25,567 - INFO - Confusion Matrix:
+[[24524    10]
+ [    0 12267]]
+2025-11-20 17:26:25,670 - INFO - Checkpoint saved at epoch 18
+2025-11-20 17:42:12,729 - INFO - Epoch 19/50 - Train Loss: 0.006329
+2025-11-20 17:44:25,185 - INFO - Epoch 19/50 - Validation Loss: 0.013902
+2025-11-20 17:44:25,263 - INFO - Epoch 19 Evaluation Metrics:
+2025-11-20 17:44:25,264 - INFO - Accuracy: 0.9951, Precision: 0.9897, Recall: 0.9958, F1: 0.9927
+2025-11-20 17:44:25,264 - INFO - Confusion Matrix:
+[[24407   127]
+ [   52 12215]]
+2025-11-20 17:44:25,362 - INFO - Checkpoint saved at epoch 19
+2025-11-20 17:44:25,362 - INFO - Early stopping triggered after 19 epochs
+2025-11-20 17:44:25,364 - INFO - Total training time: 22358.17 seconds
+2025-11-20 17:44:25,370 - INFO - Loaded best model for evaluation.
+2025-11-20 17:46:40,113 - INFO - Test Loss: 0.000656
+2025-11-20 17:46:40,113 - INFO - Total inference time: 134.74 seconds
+2025-11-20 17:46:40,113 - INFO - Avg inference time per batch: 1.05 seconds
+2025-11-20 17:46:40,113 - INFO - Avg inference time per sequence: 0.03 seconds
+2025-11-20 17:46:40,193 - INFO - Test Evaluation Metrics:
+2025-11-20 17:46:40,193 - INFO - Accuracy: 1.0000, Precision: 0.9999, Recall: 1.0000, F1: 1.0000
+2025-11-20 17:46:40,193 - INFO - Confusion Matrix:
+[[24533     1]
+ [    0 12267]]
+2025-11-20 17:46:40,279 - INFO - Config saved to experiments/20251120_113146/config.json
