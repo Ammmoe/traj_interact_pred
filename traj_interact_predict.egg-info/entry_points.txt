@@ -1,2 +1,0 @@
-[console_scripts]
-train-traj-interact = scripts.train:main
