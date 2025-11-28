@@ -16,7 +16,7 @@ import torch
 import pandas as pd
 from torch.utils.data import Dataset
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
 
@@ -323,7 +323,7 @@ def load_datasets(
 
     feature_cols = ["pos_x", "pos_y", "pos_z", "vel_x", "vel_y", "vel_z"]
 
-    scaler = MinMaxScaler()
+    scaler = StandardScaler()
     scaler.fit(train_df[feature_cols])
 
     # Step 4: Scale all data
