@@ -16,6 +16,7 @@ Features:
 import os
 import time
 import json
+import joblib
 import torch
 from torch.utils.data import DataLoader
 from traj_interact_predict.data.data_loader import load_datasets, collate_fn
@@ -31,9 +32,9 @@ from traj_interact_predict.utils.logger import get_logger
 
 def main():
     # pylint: disable=all
-    RESUME_TRAINING = False
+    RESUME_TRAINING = True
     if RESUME_TRAINING:
-        exp_dir = "experiments/20251119_184413"
+        exp_dir = "experiments/20251128_131148"
         RESUME_CHECKPOINT = os.path.join(exp_dir, "checkpoint.pt")
         logger, _ = get_logger(exp_dir=exp_dir)
     else:
@@ -208,13 +209,7 @@ def main():
             if accuracy > best_val_acc:
                 best_val_acc = accuracy
                 epochs_no_improve = 0
-                torch.save(
-                    {
-                        "model_state": model.state_dict(),
-                        "scaler": scaler,
-                    },
-                    best_model_path,
-                )
+                torch.save(model.state_dict(), best_model_path)
             else:
                 epochs_no_improve += 1
 
@@ -242,13 +237,9 @@ def main():
 
     # Save last-epoch model
     finally:
-        torch.save(
-            {
-                "model_state": model.state_dict(),
-                "scaler": scaler,
-            },
-            last_model_path,
-        )
+        torch.save(model.state_dict(), last_model_path)
+        # Save scaler
+        joblib.dump(scaler, os.path.join(exp_dir, "scaler.pkl"))
 
     # If training completed without early stopping
     if not early_stop:
