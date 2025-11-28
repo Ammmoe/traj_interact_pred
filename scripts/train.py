@@ -72,7 +72,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Load datasets
-    train_set, val_set, test_set = load_datasets(
+    train_set, val_set, test_set, scaler = load_datasets(
         trajectory_csv="data/drone_states.csv",
         relation_csv="data/drone_relations.csv",
         val_split=VAL_SPLIT,
@@ -82,11 +82,12 @@ def main():
         max_agents=MAX_AGENTS,
     )
 
-    logger.info("\n" + "="*80 + "\nStarting New Experiment\n" + "="*80)
+    logger.info("\n" + "=" * 80 + "\nStarting New Experiment\n" + "=" * 80)
     logger.info("Experiment started using device: %s", device)
     logger.info("Experiment folder: %s", exp_dir)
     logger.info(
-        "Total samples (sliding windows): %d", len(train_set) + len(val_set) + len(test_set)
+        "Total samples (sliding windows): %d",
+        len(train_set) + len(val_set) + len(test_set),
     )
     logger.info(
         "Train samples: %d, Val samples: %d, Test samples: %d",
@@ -177,7 +178,9 @@ def main():
     try:
         for epoch in range(start_epoch, EPOCHS):
             # Training step
-            train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
+            train_loss = train_one_epoch(
+                model, train_loader, optimizer, criterion, device
+            )
             logger.info("Epoch %d/%d - Train Loss: %.6f", epoch + 1, EPOCHS, train_loss)
 
             # Evaluation step
@@ -205,7 +208,13 @@ def main():
             if accuracy > best_val_acc:
                 best_val_acc = accuracy
                 epochs_no_improve = 0
-                torch.save(model.state_dict(), best_model_path)
+                torch.save(
+                    {
+                        "model_state": model.state_dict(),
+                        "scaler": scaler,
+                    },
+                    best_model_path,
+                )
             else:
                 epochs_no_improve += 1
 
@@ -233,7 +242,13 @@ def main():
 
     # Save last-epoch model
     finally:
-        torch.save(model.state_dict(), last_model_path)
+        torch.save(
+            {
+                "model_state": model.state_dict(),
+                "scaler": scaler,
+            },
+            last_model_path,
+        )
 
     # If training completed without early stopping
     if not early_stop:
@@ -256,7 +271,9 @@ def main():
     test_start_time = time.time()
 
     # Test step
-    logits, preds, labels, test_loss = evaluate_model(model, test_loader, criterion, device)
+    logits, preds, labels, test_loss = evaluate_model(
+        model, test_loader, criterion, device
+    )
 
     # Log training loss
     logger.info("Test Loss: %.6f", test_loss)
@@ -297,6 +314,7 @@ def main():
         json.dump(config, f, indent=4)
 
     logger.info("Config saved to %s", config_path)
-    
+
+
 if __name__ == "__main__":
     main()

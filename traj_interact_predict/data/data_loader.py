@@ -16,6 +16,8 @@ import torch
 import pandas as pd
 from torch.utils.data import Dataset
 import numpy as np
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
 
 
 class DroneInteractionDataset(Dataset):
@@ -60,21 +62,20 @@ class DroneInteractionDataset(Dataset):
 
     def __init__(
         self,
-        trajectory_csv,
-        relation_csv,
+        traj_df,
+        relation_df,
         lookback=50,
         device="cpu",
         max_agents=6,
         transform=None,
         stride=1,
     ):
-        self.traj_df = pd.read_csv(trajectory_csv)
-        self.relation_df = pd.read_csv(relation_csv)
+        self.traj_df = traj_df.reset_index(drop=True)
+        self.relation_df = relation_df.reset_index(drop=True)
         self.lookback = lookback
         self.device = device
         self.transform = transform
         self.max_agents = max_agents
-        self.transform = transform
         self.stride = stride
 
         # Role mapping
@@ -276,40 +277,79 @@ def collate_fn(batch):
 
 
 def load_datasets(
-    val_split, test_split, trajectory_csv, relation_csv, lookback, device, max_agents=6
+    val_split,
+    test_split,
+    trajectory_csv,
+    relation_csv,
+    lookback,
+    device,
+    max_agents=6,
 ):
     """
-    Load and split the DroneInteractionDataset into training, validation, and test subsets.
+    Correctly load and split the DroneInteractionDataset into training,
+    validation, and test subsets by splitting flights first and applying scaling.
 
     Args:
-        val_split (float): Proportion of the dataset to allocate to the validation set (e.g., 0.1 for 10%).
-        test_split (float): Proportion of the dataset to allocate to the test set (e.g., 0.1 for 10%).
-        trajectory_csv (str): Path to the CSV file containing trajectory data.
-        relation_csv (str): Path to the CSV file containing relation data.
-        lookback (int): Number of timesteps to consider in each sample window.
-        device (str): Device to load tensors on, e.g., "cpu" or "cuda".
-        max_agents (int, optional): Maximum number of agents expected per sample. Defaults to 6.
+        val_split (float): fraction for validation
+        test_split (float): fraction for test
+        trajectory_csv (str): path to trajectory csv
+        relation_csv (str): path to relation csv
+        lookback (int): number of timesteps
+        device: device for tensors
+        max_agents (int): max agents
 
     Returns:
-        tuple: A tuple containing three subsets of the dataset:
-            - train_set (torch.utils.data.Subset): Training subset.
-            - val_set (torch.utils.data.Subset): Validation subset.
-            - test_set (torch.utils.data.Subset): Test subset.
+        train_set, val_set, test_set, scaler
     """
-    dataset = DroneInteractionDataset(
-        trajectory_csv=trajectory_csv,
-        relation_csv=relation_csv,
+
+    # Step 1: Load raw data
+    traj_df = pd.read_csv(trajectory_csv)
+    rel_df = pd.read_csv(relation_csv)
+
+    # Step 2: Split flight ids for train/val/test
+    flight_ids = traj_df["flight_id"].unique()
+
+    # Split test flights first
+    train_val_flights, test_flights = train_test_split(
+        flight_ids, test_size=test_split, random_state=42
+    )
+    # Split val flights from train_val
+    train_flights, val_flights = train_test_split(
+        train_val_flights, test_size=val_split / (1 - test_split), random_state=42
+    )
+
+    # Step 3: Fit scaler on training flights only
+    train_df = traj_df[traj_df["flight_id"].isin(train_flights)]
+
+    feature_cols = ["pos_x", "pos_y", "pos_z", "vel_x", "vel_y", "vel_z"]
+
+    scaler = MinMaxScaler()
+    scaler.fit(train_df[feature_cols])
+
+    # Step 4: Scale all data
+    traj_df.loc[:, feature_cols] = scaler.transform(traj_df[feature_cols])
+
+    # Step 5: Create dataset objects for each split with filtered flights
+    train_set = DroneInteractionDataset(
+        traj_df[traj_df["flight_id"].isin(train_flights)],
+        rel_df,
+        lookback=lookback,
+        device=device,
+        max_agents=max_agents,
+    )
+    val_set = DroneInteractionDataset(
+        traj_df[traj_df["flight_id"].isin(val_flights)],
+        rel_df,
+        lookback=lookback,
+        device=device,
+        max_agents=max_agents,
+    )
+    test_set = DroneInteractionDataset(
+        traj_df[traj_df["flight_id"].isin(test_flights)],
+        rel_df,
         lookback=lookback,
         device=device,
         max_agents=max_agents,
     )
 
-    dataset_length = len(dataset)
-    val_length = int(dataset_length * val_split)
-    test_length = int(dataset_length * test_split)
-    train_length = dataset_length - val_length - test_length
-
-    train_set, val_set, test_set = torch.utils.data.random_split(
-        dataset, [train_length, val_length, test_length]
-    )
-    return train_set, val_set, test_set
+    return train_set, val_set, test_set, scaler

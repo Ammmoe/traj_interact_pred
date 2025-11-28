@@ -33,7 +33,7 @@ class DualEncoderModel(nn.Module):
         self.encoder_unauth = encoder_unauth  # unauthorized encoder
 
         self.classifier = nn.Sequential(
-            nn.Linear(embedding_dim * 4, embedding_dim),
+            nn.Linear(embedding_dim * 5, embedding_dim),
             nn.ReLU(),
             nn.Linear(embedding_dim, 1),  # binary classification: following or none
         )
@@ -117,7 +117,8 @@ class DualEncoderModel(nn.Module):
                     [
                         emb_friendly,
                         emb_unauth,
-                        torch.abs(emb_friendly - emb_unauth),
+                        torch.abs(emb_friendly - emb_unauth), # to capture magnitude
+                        emb_friendly - emb_unauth, # to capture direction
                         emb_friendly * emb_unauth,
                     ],
                     dim=-1,
