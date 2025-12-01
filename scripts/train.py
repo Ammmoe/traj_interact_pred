@@ -18,7 +18,7 @@ import time
 import json
 import torch
 from torch.utils.data import DataLoader
-from traj_interact_predict.data.data_loader import load_datasets, collate_fn
+from traj_interact_predict.data.data_loader import load_datasets
 from traj_interact_predict.models.bi_gru_encoder import TrajEmbeddingExtractor
 from traj_interact_predict.models.dual_encoder_classifier import DualEncoderModel
 from traj_interact_predict.utils.train_utils import (
@@ -57,7 +57,7 @@ def main():
     LR = 1e-3
     VAL_SPLIT = 0.15
     TEST_SPLIT = 0.15
-    MAX_AGENTS = 6
+    MAX_AGENTS = 10
     LOOKBACK = 50
 
     # Model parameters
@@ -82,11 +82,12 @@ def main():
         max_agents=MAX_AGENTS,
     )
 
-    logger.info("\n" + "="*80 + "\nStarting New Experiment\n" + "="*80)
+    logger.info("\n" + "=" * 80 + "\nStarting New Experiment\n" + "=" * 80)
     logger.info("Experiment started using device: %s", device)
     logger.info("Experiment folder: %s", exp_dir)
     logger.info(
-        "Total samples (sliding windows): %d", len(train_set) + len(val_set) + len(test_set)
+        "Total samples (sliding windows): %d",
+        len(train_set) + len(val_set) + len(test_set),
     )
     logger.info(
         "Train samples: %d, Val samples: %d, Test samples: %d",
@@ -99,15 +100,9 @@ def main():
     )
 
     # DataLoaders ([B, num_drones, lookback, feat_dim])
-    train_loader = DataLoader(
-        train_set, batch_size=BATCH_SIZE, shuffle=True
-    )
-    val_loader = DataLoader(
-        val_set, batch_size=BATCH_SIZE, shuffle=False
-    )
-    test_loader = DataLoader(
-        test_set, batch_size=BATCH_SIZE, shuffle=False
-    )
+    train_loader = DataLoader(train_set, batch_size=BATCH_SIZE, shuffle=True)
+    val_loader = DataLoader(val_set, batch_size=BATCH_SIZE, shuffle=False)
+    test_loader = DataLoader(test_set, batch_size=BATCH_SIZE, shuffle=False)
 
     # Initialize trajectory encoders
     encoder_friendly = TrajEmbeddingExtractor(**encoder_params).to(device)
@@ -177,7 +172,9 @@ def main():
     try:
         for epoch in range(start_epoch, EPOCHS):
             # Training step
-            train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
+            train_loss = train_one_epoch(
+                model, train_loader, optimizer, criterion, device
+            )
             logger.info("Epoch %d/%d - Train Loss: %.6f", epoch + 1, EPOCHS, train_loss)
 
             # Evaluation step
@@ -256,7 +253,9 @@ def main():
     test_start_time = time.time()
 
     # Test step
-    logits, preds, labels, test_loss = evaluate_model(model, test_loader, criterion, device)
+    logits, preds, labels, test_loss = evaluate_model(
+        model, test_loader, criterion, device
+    )
 
     # Log training loss
     logger.info("Test Loss: %.6f", test_loss)
@@ -297,6 +296,7 @@ def main():
         json.dump(config, f, indent=4)
 
     logger.info("Config saved to %s", config_path)
-    
+
+
 if __name__ == "__main__":
     main()
