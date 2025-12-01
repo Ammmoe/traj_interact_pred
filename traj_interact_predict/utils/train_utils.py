@@ -166,7 +166,7 @@ def evaluate_model(model, loader, criterion, device):
     all_preds = torch.cat(all_preds, dim=0)
     all_labels = torch.cat(all_labels, dim=0)
 
-    return all_logits, all_preds.numpy(), all_labels.numpy(), total_loss / len(loader)
+    return all_logits, all_preds.numpy(), all_labels.numpy(), avg_loss
 
 
 def calculate_evaluation_scores(labels, preds, probs, phase, logger, exp_dir):
