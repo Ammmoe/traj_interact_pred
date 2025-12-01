@@ -100,13 +100,13 @@ def main():
 
     # DataLoaders ([B, num_drones, lookback, feat_dim])
     train_loader = DataLoader(
-        train_set, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn
+        train_set, batch_size=BATCH_SIZE, shuffle=True
     )
     val_loader = DataLoader(
-        val_set, batch_size=BATCH_SIZE, shuffle=False, collate_fn=collate_fn
+        val_set, batch_size=BATCH_SIZE, shuffle=False
     )
     test_loader = DataLoader(
-        test_set, batch_size=BATCH_SIZE, shuffle=False, collate_fn=collate_fn
+        test_set, batch_size=BATCH_SIZE, shuffle=False
     )
 
     # Initialize trajectory encoders

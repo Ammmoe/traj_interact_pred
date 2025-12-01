@@ -38,7 +38,7 @@ class DualEncoderModel(nn.Module):
             nn.Linear(embedding_dim, 1),  # binary classification: following or none
         )
 
-    def forward(self, batch_trajectories, batch_roles, pairs_list):
+    def forward(self, batch_trajectories, batch_roles, pairs_list, batch_agent_mask):
         """
         Predicts relation logits for given agent pairs in a batch.
 
@@ -47,6 +47,8 @@ class DualEncoderModel(nn.Module):
             batch_roles (Tensor): [batch_size, max_agents] role labels (0=friendly, 1=unauthorized).
             pairs_list (list of Tensors): Length batch_size; each tensor [num_pairs, 2] of
                                         (friendly_id, unauth_id).
+            batch_agent_mask (Tensor): [batch_size, max_agents] boolean mask (True=valid agent, 
+                                        False=padded).
 
         Returns:
             list of Tensors: Length batch_size; each tensor [num_pairs, 1] of logits.
@@ -56,10 +58,11 @@ class DualEncoderModel(nn.Module):
 
         for batch_i in range(batch_size):
             roles = batch_roles[batch_i]  # [max_agents]
+            agent_mask = batch_agent_mask[batch_i]
 
             # Select agent indices by role: 0=friendly, 1=unauthorized
-            friendly_ids = (roles == 0).nonzero(as_tuple=True)[0]
-            unauth_ids = (roles == 1).nonzero(as_tuple=True)[0]
+            friendly_ids = ((roles == 0) & agent_mask).nonzero(as_tuple=True)[0]
+            unauth_ids = ((roles == 1) & agent_mask).nonzero(as_tuple=True)[0]
 
             # Select trajectories for friendly and unauthorized agents
             traj_friendly = batch_trajectories[
@@ -97,6 +100,11 @@ class DualEncoderModel(nn.Module):
 
             batch_logits = []
             for friendly_id, unauth_id in pairs:
+                # Skip pairs where either agent is masked out
+                if not (agent_mask[friendly_id] and agent_mask[unauth_id]):
+                    # If invalid agent in pair, skip
+                    continue
+                
                 f_idx = friendly_id_map.get(friendly_id.item(), None)
                 u_idx = unauth_id_map.get(unauth_id.item(), None)
 

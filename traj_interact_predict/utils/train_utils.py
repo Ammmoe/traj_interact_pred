@@ -44,6 +44,7 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
     """
     model.train()
     total_loss = 0.0
+    total_pairs = 0
 
     for (
         batch_trajectories,
@@ -69,7 +70,9 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
         optimizer.zero_grad()
 
         # Forward pass: return batch_size length list of [num_pairs_i, 1]
-        logits_list = model(batch_trajectories, batch_roles, pairs_list)
+        logits_list = model(
+            batch_trajectories, batch_roles, pairs_list, batch_agent_mask
+        )
 
         # Pack into tensors for loss computation
         logits = torch.cat(logits_list, dim=0).squeeze(-1)  # [total_num_pairs]
@@ -82,9 +85,15 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
         loss.backward()
         optimizer.step()
 
-        total_loss += loss.item()
+        # Each batch can have different number of pairs
+        total_loss += loss.item() * labels.size(0)
 
-    return total_loss / len(loader)  # Average loss over all batches
+        # Number of pairs in each batch is summed up
+        total_pairs += labels.size(0)
+
+    return (
+        total_loss / total_pairs if total_pairs > 0 else 0.0
+    )  # Average loss over all batches
 
 
 @torch.no_grad()
@@ -105,6 +114,7 @@ def evaluate_model(model, loader, criterion, device):
     """
     model.eval()
     total_loss = 0.0
+    total_pairs = 0
     all_logits, all_preds, all_labels = [], [], []
 
     for (
@@ -128,7 +138,9 @@ def evaluate_model(model, loader, criterion, device):
         ]  # [batch_size, num_pairs]
 
         # Forward pass: return batch_size length list of [num_pairs_i, 1]
-        logits_list = model(batch_trajectories, batch_roles, pairs_list)
+        logits_list = model(
+            batch_trajectories, batch_roles, pairs_list, batch_agent_mask
+        )
 
         # Pack into tensors for metric computation
         logits = torch.cat(logits_list, dim=0).squeeze(-1)  # [total_num_pairs]
@@ -136,7 +148,10 @@ def evaluate_model(model, loader, criterion, device):
 
         # Compute loss
         loss = criterion(logits, labels)
-        total_loss += loss.item()
+        batch_pairs = labels.size(0)
+
+        total_loss += loss.item() * batch_pairs  # Batch loss for all pairs
+        total_pairs += batch_pairs
 
         # Predictions
         preds = (torch.sigmoid(logits) >= 0.5).long()
@@ -144,6 +159,8 @@ def evaluate_model(model, loader, criterion, device):
         all_logits.append(logits.cpu())
         all_preds.append(preds.cpu())
         all_labels.append(labels.cpu())
+
+    avg_loss = total_loss / total_pairs if total_pairs > 0 else 0.0
 
     all_logits = torch.cat(all_logits, dim=0)
     all_preds = torch.cat(all_preds, dim=0)

@@ -92,14 +92,9 @@ class DroneInteractionDataset(Dataset):
             )
             self.flight_groups[fid] = flight_data
 
-            # Find valid timesteps with all agents present
-            # Skip timesteps with missing agents
-            # Skip if not enough valid timesteps for lookback
-            valid_timesteps = [
-                t
-                for t, df_t in flight_data.groupby("time_stamp")
-                if len(df_t) == self.max_agents
-            ]
+            # Do not skip timesteps with missing agents
+            # We will pad the missing agents later
+            valid_timesteps = [t for t, _ in flight_data.groupby("time_stamp")]
             if len(valid_timesteps) < lookback:
                 continue
             self.flight_valid_timesteps[fid] = valid_timesteps
@@ -124,11 +119,18 @@ class DroneInteractionDataset(Dataset):
 
         trajectories = []
         roles = []
+        agent_mask = []  # We will add a mask for samples with missing agents
 
         for agent in agents:
             agent_rows = flight_data[flight_data["drone_id"] == agent].set_index(
                 "time_stamp"
             )
+
+            # Get role for this agent
+            role_str = agent_rows["role"].iloc[0]
+            role_val = self.role_map[role_str]
+
+            # Build trajectory for this agent
             agent_traj = []
             last_row = np.zeros(
                 6, dtype=np.float32
@@ -144,9 +146,29 @@ class DroneInteractionDataset(Dataset):
 
             agent_traj = np.stack(agent_traj, axis=0)  # [lookback, 6]
             trajectories.append(agent_traj)
-            roles.append(agent_rows["role"].iloc[0])
+            roles.append(role_val)
+            agent_mask.append(1)  # Valid agent
 
-        trajectories = np.stack(trajectories, axis=0)  # [num_agents, lookback, 6]
+        # Add padding if num_agents < max_agents
+        if num_agents < self.max_agents:
+            pad_size = self.max_agents - num_agents
+
+            # Pad trajectories with zeros: shape [pad_size, lookback, 6]
+            pad_traj = np.zeros((pad_size, self.lookback, 6), dtype=np.float32)
+            trajectories = np.stack(
+                trajectories, axis=0
+            )  # shape [num_agents, lookback, 6]
+
+            # Shape [max_agents, lookback, 6]
+            trajectories = np.concatenate([trajectories, pad_traj], axis=0)
+
+            # Pad roles: invalid [2]
+            roles.extend([2] * pad_size)
+
+            # Pad mask with 0 (invalid agent)
+            agent_mask.extend([0] * pad_size)
+
+        # Convert to torch
         trajectories = torch.tensor(
             trajectories, dtype=torch.float32, device=self.device
         )
@@ -154,22 +176,25 @@ class DroneInteractionDataset(Dataset):
             trajectories = self.transform(trajectories)
         trajectories = trajectories.transpose(0, 1)  # [lookback, num_agents, 6]
 
-        roles_tensor = torch.tensor(
-            [self.role_map[r] for r in roles], dtype=torch.long, device=self.device
-        )
-        agent_mask = torch.ones(num_agents, dtype=torch.bool, device=self.device)
+        roles_tensor = torch.tensor(roles, dtype=torch.long, device=self.device)
+
+        # Mask tensor (1 = valid agent, 0 = padded)
+        agent_mask = torch.tensor(agent_mask, dtype=torch.bool, device=self.device)
+
+        # Only consider valid agents when building pairs
+        valid_agent_ids = agents  # Original list
 
         # Build pairs and labels
         pairs, labels = [], []
         friendly_agents = [
             a
-            for a in agents
+            for a in valid_agent_ids
             if self.role_map[flight_data[flight_data["drone_id"] == a]["role"].iloc[0]]
             == 0
         ]
         unauth_agents = [
             a
-            for a in agents
+            for a in valid_agent_ids
             if self.role_map[flight_data[flight_data["drone_id"] == a]["role"].iloc[0]]
             == 1
         ]
