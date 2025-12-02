@@ -14,7 +14,7 @@ tasks where drones are categorized as friendly or unauthorized.
 
 import torch
 import pandas as pd
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, Subset
 import numpy as np
 
 
@@ -332,7 +332,8 @@ def load_datasets(
     agents_to_pad=None,
 ):
     """
-    Load and split the DroneInteractionDataset into training, validation, and test subsets.
+    Load the DroneInteractionDataset and split it into training, validation, and test subsets
+    by deterministic contiguous slicing of the dataset indices.
 
     Args:
         val_split (float): Proportion of the dataset to allocate to the validation set (e.g., 0.1 for 10%).
@@ -345,9 +346,13 @@ def load_datasets(
 
     Returns:
         tuple: A tuple containing three subsets of the dataset:
-            - train_set (torch.utils.data.Subset): Training subset.
-            - val_set (torch.utils.data.Subset): Validation subset.
-            - test_set (torch.utils.data.Subset): Test subset.
+            - train_set (torch.utils.data.Subset): Training subset containing the first samples.
+            - val_set (torch.utils.data.Subset): Validation subset containing the next samples.
+            - test_set (torch.utils.data.Subset): Test subset containing the final samples.
+
+    Note:
+        The splitting is deterministic and based on contiguous dataset indices,
+        not randomized.
     """
     dataset = DroneInteractionDataset(
         trajectory_csv=trajectory_csv,
@@ -363,7 +368,13 @@ def load_datasets(
     test_length = int(dataset_length * test_split)
     train_length = dataset_length - val_length - test_length
 
-    train_set, val_set, test_set = torch.utils.data.random_split(
-        dataset, [train_length, val_length, test_length]
-    )
+    # Deterministic split by index slicing
+    train_indices = list(range(0, train_length))
+    val_indices = list(range(train_length, train_length + val_length))
+    test_indices = list(range(train_length + val_length, dataset_length))
+
+    train_set = Subset(dataset, train_indices)
+    val_set = Subset(dataset, val_indices)
+    test_set = Subset(dataset, test_indices)
+
     return train_set, val_set, test_set
