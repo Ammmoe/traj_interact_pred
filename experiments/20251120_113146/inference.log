@@ -1,0 +1,18 @@
+2025-12-02 13:45:05,878 - INFO - 
+================================================================================
+Starting New Inference Session
+================================================================================
+2025-12-02 13:45:05,878 - INFO - Using device: cpu
+2025-12-02 13:45:05,878 - INFO - Experiment folder: experiments/20251120_113146
+2025-12-02 13:45:05,879 - INFO - Inference batch size: 1
+2025-12-02 13:45:05,879 - INFO - Agents padded during dataset preparation: [1, 3]
+2025-12-02 13:45:06,172 - INFO - Starting inference on test dataset...
+2025-12-02 13:45:27,644 - INFO - 
+================================================================================
+Starting New Inference Session
+================================================================================
+2025-12-02 13:45:27,644 - INFO - Using device: cpu
+2025-12-02 13:45:27,644 - INFO - Experiment folder: experiments/20251120_113146
+2025-12-02 13:45:27,644 - INFO - Inference batch size: 1
+2025-12-02 13:45:27,644 - INFO - Agents padded during dataset preparation: None
+2025-12-02 13:45:27,933 - INFO - Starting inference on test dataset...

@@ -205,10 +205,10 @@ The inference script supports an optional parameter:
 
 ### **Examples:**
 
-- Pad agents 0, 2, and 4:
+- Pad agents 0, and 4:
 
 ```python
-agents_to_pad = [0, 2, 4]
+agents_to_pad = [0, 4]
 ```
 
 - Use all agents (no padding):

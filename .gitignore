@@ -1,4 +1,4 @@
-experiments/
+experiments/*
 !experiments/20251120_113146
 !experiments/20251201_180721
 # data/*.csv

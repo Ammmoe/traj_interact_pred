@@ -122,7 +122,7 @@ def main():
         config = json.load(f)
 
     # Inference config
-    batch_size = 1
+    batch_size = 32
     agents_to_pad = [1, 3]
 
     # Log batch size and padded agents
