@@ -67,6 +67,7 @@ class DroneInteractionDataset(Dataset):
         max_agents=6,
         transform=None,
         stride=1,
+        agents_to_pad=None,
     ):
         self.traj_df = pd.read_csv(trajectory_csv)
         self.relation_df = pd.read_csv(relation_csv)
@@ -76,6 +77,9 @@ class DroneInteractionDataset(Dataset):
         self.max_agents = max_agents
         self.transform = transform
         self.stride = stride
+        if agents_to_pad is None:
+            agents_to_pad = []
+        self.agents_to_pad = agents_to_pad
 
         # Role mapping
         self.role_map = {"friendly": 0, "unauthorized": 1}
@@ -168,6 +172,21 @@ class DroneInteractionDataset(Dataset):
             # Pad mask with 0 (invalid agent)
             agent_mask.extend([0] * pad_size)
 
+            # Induce padding actual agents for test purpose
+            # Start
+            agents_to_pad = self.agents_to_pad
+
+            for pad_idx in agents_to_pad:
+                # Zero out trajectories
+                trajectories[pad_idx, :, :] = 0.0
+
+                # Change role to padding role (2)
+                roles[pad_idx] = 2
+
+                # Set mask to False (invalid)
+                agent_mask[pad_idx] = 0
+            # End
+
         # Convert to torch
         trajectories = torch.tensor(
             trajectories, dtype=torch.float32, device=self.device
@@ -182,7 +201,9 @@ class DroneInteractionDataset(Dataset):
         agent_mask = torch.tensor(agent_mask, dtype=torch.bool, device=self.device)
 
         # Only consider valid agents when building pairs
-        valid_agent_ids = agents  # Original list
+        # valid_agent_ids = agents  # Original list
+        # Check for agent mask instead of looking at original unique list for inducing padding
+        valid_agent_ids = [i for i, m in enumerate(agent_mask) if m == 1]
 
         # Build pairs and labels
         pairs, labels = [], []
@@ -301,7 +322,14 @@ def collate_fn(batch):
 
 
 def load_datasets(
-    val_split, test_split, trajectory_csv, relation_csv, lookback, device, max_agents=6
+    val_split,
+    test_split,
+    trajectory_csv,
+    relation_csv,
+    lookback,
+    device,
+    max_agents=6,
+    agents_to_pad=None,
 ):
     """
     Load and split the DroneInteractionDataset into training, validation, and test subsets.
@@ -327,6 +355,7 @@ def load_datasets(
         lookback=lookback,
         device=device,
         max_agents=max_agents,
+        agents_to_pad=agents_to_pad,
     )
 
     dataset_length = len(dataset)

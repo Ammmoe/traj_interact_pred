@@ -144,3 +144,55 @@ DualEncoderModel(
 [[24526    32]
  [   46 12233]]
 2025-12-02 02:47:31,745 - INFO - Config saved to experiments/20251201_180721/config.json
+2025-12-02 10:23:27,701 - INFO - Starting inference on test dataset...
+2025-12-02 10:33:28,573 - INFO - Starting inference on test dataset...
+2025-12-02 10:38:04,033 - INFO - Starting inference on test dataset...
+2025-12-02 10:40:33,812 - INFO - Inference Evaluation Metrics:
+2025-12-02 10:40:33,812 - INFO - Accuracy: 0.9979, Precision: 0.9975, Recall: 0.9961, F1: 0.9968
+2025-12-02 10:40:33,812 - INFO - Confusion Matrix:
+[[24527    31]
+ [   48 12231]]
+2025-12-02 10:40:34,109 - INFO - Final Test Accuracy: 0.9979
+2025-12-02 10:52:08,020 - INFO - Starting inference on test dataset...
+2025-12-02 10:54:39,605 - INFO - Inference Evaluation Metrics:
+2025-12-02 10:54:39,606 - INFO - Accuracy: 0.9983, Precision: 0.9981, Recall: 0.9967, F1: 0.9974
+2025-12-02 10:54:39,606 - INFO - Confusion Matrix:
+[[24535    23]
+ [   41 12238]]
+2025-12-02 10:54:39,889 - INFO - Final Test Accuracy: 0.9983
+2025-12-02 10:58:32,960 - INFO - Starting inference on test dataset...
+2025-12-02 11:01:04,817 - INFO - Inference Evaluation Metrics:
+2025-12-02 11:01:04,818 - INFO - Accuracy: 0.9980, Precision: 0.9976, Recall: 0.9963, F1: 0.9969
+2025-12-02 11:01:04,818 - INFO - Confusion Matrix:
+[[24528    30]
+ [   45 12234]]
+2025-12-02 11:01:05,069 - INFO - Final Test Accuracy: 0.9980
+2025-12-02 11:02:38,970 - INFO - Starting inference on test dataset...
+2025-12-02 11:03:55,417 - INFO - Starting inference on test dataset...
+2025-12-02 11:09:40,915 - INFO - Starting inference on test dataset...
+2025-12-02 11:18:04,769 - INFO - Starting inference on test dataset...
+2025-12-02 11:18:59,841 - INFO - Starting inference on test dataset...
+2025-12-02 11:30:49,431 - INFO - Starting inference on test dataset...
+2025-12-02 11:43:28,294 - INFO - Starting inference on test dataset...
+2025-12-02 11:52:47,075 - INFO - Starting inference on test dataset...
+2025-12-02 11:56:18,736 - INFO - Starting inference on test dataset...
+2025-12-02 11:58:35,136 - INFO - Inference Evaluation Metrics:
+2025-12-02 11:58:35,136 - INFO - Accuracy: 0.9970, Precision: 0.9968, Recall: 0.9932, F1: 0.9950
+2025-12-02 11:58:35,136 - INFO - Confusion Matrix:
+[[5134    7]
+ [  15 2182]]
+2025-12-02 11:58:35,425 - INFO - Final Test Accuracy: 0.9970
+2025-12-02 12:02:59,552 - INFO - Starting inference on test dataset...
+2025-12-02 12:05:34,457 - INFO - Inference Evaluation Metrics:
+2025-12-02 12:05:34,457 - INFO - Accuracy: 0.9978, Precision: 0.9981, Recall: 0.9953, F1: 0.9967
+2025-12-02 12:05:34,457 - INFO - Confusion Matrix:
+[[24535    23]
+ [   58 12221]]
+2025-12-02 12:05:34,745 - INFO - Final Test Accuracy: 0.9978
+2025-12-02 12:07:54,905 - INFO - Starting inference on test dataset...
+2025-12-02 12:10:08,041 - INFO - Inference Evaluation Metrics:
+2025-12-02 12:10:08,041 - INFO - Accuracy: 1.0000, Precision: 1.0000, Recall: 1.0000, F1: 1.0000
+2025-12-02 12:10:08,041 - INFO - Confusion Matrix:
+[[1593    0]
+ [   0  678]]
+2025-12-02 12:10:08,322 - INFO - Final Test Accuracy: 1.0000

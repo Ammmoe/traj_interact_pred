@@ -36,6 +36,7 @@ The final forward and backward hidden states are concatenated and projected into
 .
 ├── scripts/
 │   └── train.py                       # Main training script
+│   └── inference.py                   # Inference script
 │
 ├── traj_interact_predict/
 │   ├── __init__.py
@@ -187,3 +188,41 @@ After training completes, the script:
 - Stores experiment configurations in `config.json`
 
 All outputs are saved inside the experiment folder.
+
+---
+
+## 🔍 Inference
+
+### ⚙️ Inference Configuration
+
+The inference script supports an optional parameter:
+
+- **agents_to_pad**: List of agent indices to be zero-padded during inference to simulate fewer agents.
+
+> Agents with indices 0 to 2 are friendly agents, and agents with indices 3 to 5 are unauthorized agents.
+
+---
+
+### **Examples:**
+
+- Pad agents 0, 2, and 4:
+
+```python
+agents_to_pad = [0, 2, 4]
+```
+
+- Use all agents (no padding):
+
+```python
+agents_to_pad = None
+```
+
+---
+
+### ▶️ Running Inference (`inference.py`)
+
+Run inference with:
+
+```bash
+python -m scripts.inference
+```

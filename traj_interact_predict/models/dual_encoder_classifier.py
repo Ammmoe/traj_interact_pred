@@ -47,7 +47,7 @@ class DualEncoderModel(nn.Module):
             batch_roles (Tensor): [batch_size, max_agents] role labels (0=friendly, 1=unauthorized).
             pairs_list (list of Tensors): Length batch_size; each tensor [num_pairs, 2] of
                                         (friendly_id, unauth_id).
-            batch_agent_mask (Tensor): [batch_size, max_agents] boolean mask (True=valid agent, 
+            batch_agent_mask (Tensor): [batch_size, max_agents] boolean mask (True=valid agent,
                                         False=padded).
 
         Returns:
@@ -104,7 +104,7 @@ class DualEncoderModel(nn.Module):
                 if not (agent_mask[friendly_id] and agent_mask[unauth_id]):
                     # If invalid agent in pair, skip
                     continue
-                
+
                 f_idx = friendly_id_map.get(friendly_id.item(), None)
                 u_idx = unauth_id_map.get(unauth_id.item(), None)
 
