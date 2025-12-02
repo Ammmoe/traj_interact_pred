@@ -1,5 +1,6 @@
 experiments/
 !experiments/20251120_113146
+!experiments/20251201_180721
 # data/*.csv
 
 # Ignore all __pycache__ directories recursively

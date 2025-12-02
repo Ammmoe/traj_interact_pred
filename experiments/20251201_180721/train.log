@@ -1,0 +1,146 @@
+2025-12-01 18:07:21,760 - INFO - 
+================================================================================
+Starting New Experiment
+================================================================================
+2025-12-01 18:07:21,760 - INFO - Experiment started using device: cuda
+2025-12-01 18:07:21,760 - INFO - Experiment folder: experiments/20251201_180721
+2025-12-01 18:07:21,760 - INFO - Total samples (sliding windows): 27292
+2025-12-01 18:07:21,761 - INFO - Train samples: 19106, Val samples: 4093, Test samples: 4093
+2025-12-01 18:07:21,761 - INFO - Batch size: 32, Planned epochs: 50, Learning rate: 0.001
+2025-12-01 18:07:21,880 - INFO - Encoder module (friendly agents): traj_interact_predict.models.bi_gru_encoder
+2025-12-01 18:07:21,880 - INFO - Encoder module (unauthorized agents): traj_interact_predict.models.bi_gru_encoder
+2025-12-01 18:07:21,880 - INFO - Model module: traj_interact_predict.models.dual_encoder_classifier
+2025-12-01 18:07:21,880 - INFO - Model architecture:
+DualEncoderModel(
+  (encoder_friendly): TrajEmbeddingExtractor(
+    (encoder): GRU(6, 64, batch_first=True, bidirectional=True)
+    (enc_to_embed): Linear(in_features=128, out_features=64, bias=True)
+  )
+  (encoder_unauth): TrajEmbeddingExtractor(
+    (encoder): GRU(6, 64, batch_first=True, bidirectional=True)
+    (enc_to_embed): Linear(in_features=128, out_features=64, bias=True)
+  )
+  (classifier): Sequential(
+    (0): Linear(in_features=256, out_features=64, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=64, out_features=1, bias=True)
+  )
+)
+2025-12-01 18:07:22,706 - INFO - Starting training from scratch.
+2025-12-01 18:40:16,856 - INFO - Epoch 1/50 - Train Loss: 0.301634
+2025-12-01 18:46:55,721 - INFO - Epoch 1/50 - Validation Loss: 0.156010
+2025-12-01 18:46:55,820 - INFO - Epoch 1 Evaluation Metrics:
+2025-12-01 18:46:55,820 - INFO - Accuracy: 0.9332, Precision: 0.8818, Recall: 0.9233, F1: 0.9021
+2025-12-01 18:46:55,820 - INFO - Confusion Matrix:
+[[23039  1519]
+ [  942 11337]]
+2025-12-01 18:46:56,429 - INFO - Checkpoint saved at epoch 1
+2025-12-01 19:19:44,277 - INFO - Epoch 2/50 - Train Loss: 0.098502
+2025-12-01 19:26:23,392 - INFO - Epoch 2/50 - Validation Loss: 0.062009
+2025-12-01 19:26:23,465 - INFO - Epoch 2 Evaluation Metrics:
+2025-12-01 19:26:23,466 - INFO - Accuracy: 0.9768, Precision: 0.9621, Recall: 0.9686, F1: 0.9654
+2025-12-01 19:26:23,466 - INFO - Confusion Matrix:
+[[24090   468]
+ [  385 11894]]
+2025-12-01 19:26:23,769 - INFO - Checkpoint saved at epoch 2
+2025-12-01 19:59:15,872 - INFO - Epoch 3/50 - Train Loss: 0.052238
+2025-12-01 20:05:52,043 - INFO - Epoch 3/50 - Validation Loss: 0.033387
+2025-12-01 20:05:52,116 - INFO - Epoch 3 Evaluation Metrics:
+2025-12-01 20:05:52,116 - INFO - Accuracy: 0.9874, Precision: 0.9849, Recall: 0.9771, F1: 0.9810
+2025-12-01 20:05:52,117 - INFO - Confusion Matrix:
+[[24374   184]
+ [  281 11998]]
+2025-12-01 20:05:52,420 - INFO - Checkpoint saved at epoch 3
+2025-12-01 20:38:39,664 - INFO - Epoch 4/50 - Train Loss: 0.034997
+2025-12-01 20:45:20,676 - INFO - Epoch 4/50 - Validation Loss: 0.034519
+2025-12-01 20:45:20,750 - INFO - Epoch 4 Evaluation Metrics:
+2025-12-01 20:45:20,750 - INFO - Accuracy: 0.9865, Precision: 0.9893, Recall: 0.9699, F1: 0.9795
+2025-12-01 20:45:20,750 - INFO - Confusion Matrix:
+[[24429   129]
+ [  370 11909]]
+2025-12-01 20:45:21,048 - INFO - Checkpoint saved at epoch 4
+2025-12-01 21:18:06,452 - INFO - Epoch 5/50 - Train Loss: 0.026280
+2025-12-01 21:24:43,515 - INFO - Epoch 5/50 - Validation Loss: 0.166583
+2025-12-01 21:24:43,589 - INFO - Epoch 5 Evaluation Metrics:
+2025-12-01 21:24:43,589 - INFO - Accuracy: 0.9494, Precision: 0.9345, Recall: 0.9120, F1: 0.9231
+2025-12-01 21:24:43,589 - INFO - Confusion Matrix:
+[[23773   785]
+ [ 1080 11199]]
+2025-12-01 21:24:43,889 - INFO - Checkpoint saved at epoch 5
+2025-12-01 21:57:42,525 - INFO - Epoch 6/50 - Train Loss: 0.023955
+2025-12-01 22:04:17,885 - INFO - Epoch 6/50 - Validation Loss: 0.010148
+2025-12-01 22:04:17,957 - INFO - Epoch 6 Evaluation Metrics:
+2025-12-01 22:04:17,957 - INFO - Accuracy: 0.9971, Precision: 0.9931, Recall: 0.9984, F1: 0.9957
+2025-12-01 22:04:17,957 - INFO - Confusion Matrix:
+[[24473    85]
+ [   20 12259]]
+2025-12-01 22:04:18,256 - INFO - Checkpoint saved at epoch 6
+2025-12-01 22:37:10,669 - INFO - Epoch 7/50 - Train Loss: 0.017805
+2025-12-01 22:43:51,005 - INFO - Epoch 7/50 - Validation Loss: 0.007119
+2025-12-01 22:43:51,077 - INFO - Epoch 7 Evaluation Metrics:
+2025-12-01 22:43:51,077 - INFO - Accuracy: 0.9971, Precision: 0.9962, Recall: 0.9950, F1: 0.9956
+2025-12-01 22:43:51,077 - INFO - Confusion Matrix:
+[[24512    46]
+ [   62 12217]]
+2025-12-01 22:43:51,380 - INFO - Checkpoint saved at epoch 7
+2025-12-01 23:16:35,928 - INFO - Epoch 8/50 - Train Loss: 0.018618
+2025-12-01 23:23:13,318 - INFO - Epoch 8/50 - Validation Loss: 0.007364
+2025-12-01 23:23:13,390 - INFO - Epoch 8 Evaluation Metrics:
+2025-12-01 23:23:13,390 - INFO - Accuracy: 0.9981, Precision: 0.9986, Recall: 0.9956, F1: 0.9971
+2025-12-01 23:23:13,390 - INFO - Confusion Matrix:
+[[24541    17]
+ [   54 12225]]
+2025-12-01 23:23:13,691 - INFO - Checkpoint saved at epoch 8
+2025-12-01 23:55:52,289 - INFO - Epoch 9/50 - Train Loss: 0.014362
+2025-12-02 00:02:32,441 - INFO - Epoch 9/50 - Validation Loss: 0.009469
+2025-12-02 00:02:32,514 - INFO - Epoch 9 Evaluation Metrics:
+2025-12-02 00:02:32,514 - INFO - Accuracy: 0.9968, Precision: 0.9970, Recall: 0.9934, F1: 0.9952
+2025-12-02 00:02:32,515 - INFO - Confusion Matrix:
+[[24521    37]
+ [   81 12198]]
+2025-12-02 00:02:32,812 - INFO - Checkpoint saved at epoch 9
+2025-12-02 00:35:20,302 - INFO - Epoch 10/50 - Train Loss: 0.014900
+2025-12-02 00:42:01,198 - INFO - Epoch 10/50 - Validation Loss: 0.006730
+2025-12-02 00:42:01,271 - INFO - Epoch 10 Evaluation Metrics:
+2025-12-02 00:42:01,271 - INFO - Accuracy: 0.9974, Precision: 0.9984, Recall: 0.9937, F1: 0.9961
+2025-12-02 00:42:01,271 - INFO - Confusion Matrix:
+[[24539    19]
+ [   77 12202]]
+2025-12-02 00:42:01,569 - INFO - Checkpoint saved at epoch 10
+2025-12-02 01:15:06,975 - INFO - Epoch 11/50 - Train Loss: 0.012227
+2025-12-02 01:21:47,133 - INFO - Epoch 11/50 - Validation Loss: 0.007621
+2025-12-02 01:21:47,206 - INFO - Epoch 11 Evaluation Metrics:
+2025-12-02 01:21:47,207 - INFO - Accuracy: 0.9975, Precision: 0.9965, Recall: 0.9959, F1: 0.9962
+2025-12-02 01:21:47,207 - INFO - Confusion Matrix:
+[[24515    43]
+ [   50 12229]]
+2025-12-02 01:21:47,505 - INFO - Checkpoint saved at epoch 11
+2025-12-02 01:54:38,221 - INFO - Epoch 12/50 - Train Loss: 0.014311
+2025-12-02 02:01:18,619 - INFO - Epoch 12/50 - Validation Loss: 0.036394
+2025-12-02 02:01:18,693 - INFO - Epoch 12 Evaluation Metrics:
+2025-12-02 02:01:18,693 - INFO - Accuracy: 0.9876, Precision: 0.9909, Recall: 0.9718, F1: 0.9813
+2025-12-02 02:01:18,693 - INFO - Confusion Matrix:
+[[24448   110]
+ [  346 11933]]
+2025-12-02 02:01:18,991 - INFO - Checkpoint saved at epoch 12
+2025-12-02 02:34:16,602 - INFO - Epoch 13/50 - Train Loss: 0.013796
+2025-12-02 02:40:53,030 - INFO - Epoch 13/50 - Validation Loss: 0.024422
+2025-12-02 02:40:53,105 - INFO - Epoch 13 Evaluation Metrics:
+2025-12-02 02:40:53,105 - INFO - Accuracy: 0.9920, Precision: 0.9886, Recall: 0.9873, F1: 0.9879
+2025-12-02 02:40:53,105 - INFO - Confusion Matrix:
+[[24418   140]
+ [  156 12123]]
+2025-12-02 02:40:53,409 - INFO - Checkpoint saved at epoch 13
+2025-12-02 02:40:53,409 - INFO - Early stopping triggered after 13 epochs
+2025-12-02 02:40:53,410 - INFO - Total training time: 30810.70 seconds
+2025-12-02 02:40:53,413 - INFO - Loaded best model for evaluation.
+2025-12-02 02:47:31,378 - INFO - Test Loss: 0.007188
+2025-12-02 02:47:31,378 - INFO - Total inference time: 397.96 seconds
+2025-12-02 02:47:31,378 - INFO - Avg inference time per batch: 3.11 seconds
+2025-12-02 02:47:31,378 - INFO - Avg inference time per sequence: 0.10 seconds
+2025-12-02 02:47:31,456 - INFO - Test Evaluation Metrics:
+2025-12-02 02:47:31,456 - INFO - Accuracy: 0.9979, Precision: 0.9974, Recall: 0.9963, F1: 0.9968
+2025-12-02 02:47:31,456 - INFO - Confusion Matrix:
+[[24526    32]
+ [   46 12233]]
+2025-12-02 02:47:31,745 - INFO - Config saved to experiments/20251201_180721/config.json
