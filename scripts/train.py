@@ -59,6 +59,8 @@ def main():
     TEST_SPLIT = 0.15
     MAX_AGENTS = 10
     LOOKBACK = 50
+    NUM_FRIENDLY_TO_PAD = 0
+    NUM_UNAUTH_TO_PAD = 0
 
     # Model parameters
     encoder_params = {
@@ -80,6 +82,8 @@ def main():
         lookback=LOOKBACK,
         device=device,
         max_agents=MAX_AGENTS,
+        num_friendly_to_pad=NUM_FRIENDLY_TO_PAD,
+        num_unauth_to_pad=NUM_UNAUTH_TO_PAD,
     )
 
     logger.info("\n" + "=" * 80 + "\nStarting New Experiment\n" + "=" * 80)
@@ -97,6 +101,12 @@ def main():
     )
     logger.info(
         "Batch size: %d, Planned epochs: %d, Learning rate: %s", BATCH_SIZE, EPOCHS, LR
+    )
+    logger.info(
+        "Friendly agents padded during dataset preparation: %s", NUM_FRIENDLY_TO_PAD
+    )
+    logger.info(
+        "Unauthorised agents padded during dataset preparation: %s", NUM_UNAUTH_TO_PAD
     )
 
     # DataLoaders ([B, num_drones, lookback, feat_dim])
@@ -288,6 +298,8 @@ def main():
         "LEARNING_RATE": LR,
         "SET_SEED": SET_SEED,
         "SEED": SEED,
+        "NUM_FRIENDLY_TO_PAD": NUM_FRIENDLY_TO_PAD,
+        "NUM_UNAUTH_TO_PAD": NUM_UNAUTH_TO_PAD,
     }
 
     os.makedirs(exp_dir, exist_ok=True)

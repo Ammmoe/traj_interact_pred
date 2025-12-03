@@ -37,7 +37,7 @@ def run_inference(
     pairs: torch.Tensor,  # shape: [num_pairs, 2], agent pair ids (friendly -> unauth)
     agent_mask: torch.Tensor,  # shape: [num_agents], True = valid agent, False = padded
     experiment_dir: str = "experiments/20251201_180721",  # experiment directory
-) -> torch.Tensor:
+) -> torch.Tensor:  # shape: [num_pairs]
     """
     Run inference on a single sample.
 
@@ -123,11 +123,17 @@ def main():
 
     # Inference config
     batch_size = 32
-    agents_to_pad = [1, 3]
+    num_friendly_to_pad = 2
+    num_unauth_to_pad = 2
 
     # Log batch size and padded agents
     logger.info("Inference batch size: %d", batch_size)
-    logger.info("Agents padded during dataset preparation: %s", agents_to_pad)
+    logger.info(
+        "Friendly agents padded during dataset preparation: %s", num_friendly_to_pad
+    )
+    logger.info(
+        "Unauthorised agents padded during dataset preparation: %s", num_unauth_to_pad
+    )
 
     # Load datasets
     _, _, test_set = load_datasets(
@@ -138,7 +144,8 @@ def main():
         lookback=config.get("LOOK_BACK"),
         device=device,
         max_agents=config.get("MAX_AGENTS"),
-        agents_to_pad=agents_to_pad,
+        num_friendly_to_pad=num_friendly_to_pad,
+        num_unauth_to_pad=num_unauth_to_pad,
     )
 
     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)

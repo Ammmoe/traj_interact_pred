@@ -195,26 +195,29 @@ All outputs are saved inside the experiment folder.
 
 ### ⚙️ Inference Configuration
 
-The inference script supports an optional parameter:
+The inference script provides two optional parameters for simulating scenarios with missing agents:
 
-- **agents_to_pad**: List of agent indices to be zero-padded during inference to simulate fewer agents.
+- num_friendly_to_pad: Number of friendly agents to zero-pad during inference.
+- num_unauth_to_pad: Number of unauthorized agents to zero-pad.
 
-> Agents with indices 0 to 2 are friendly agents, and agents with indices 3 to 5 are unauthorized agents.
+> Padding is applied by randomly selecting which agents to suppress, similar to the training-time padding strategy.
 
 ---
 
 ### **Examples:**
 
-- Pad agents 0, and 4:
+- Pad 2 friendly agents and 2 unauthorized agents:
 
 ```python
-agents_to_pad = [0, 4]
+num_friendly_to_pad = 2  
+num_unauth_to_pad = 2
 ```
 
-- Use all agents (no padding):
+- Do not pad any agents:
 
 ```python
-agents_to_pad = None
+num_friendly_to_pad = 0  
+num_unauth_to_pad = 0
 ```
 
 ---

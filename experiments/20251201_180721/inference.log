@@ -106,3 +106,39 @@ Starting New Inference Session
 [[12279     0]
  [    0  4093]]
 2025-12-02 17:11:25,109 - INFO - Final Inference Accuracy: 1.0000
+2025-12-03 12:20:21,557 - INFO - 
+================================================================================
+Starting New Inference Session
+================================================================================
+2025-12-03 12:20:21,558 - INFO - Using device: cpu
+2025-12-03 12:20:21,558 - INFO - Experiment folder: experiments/20251201_180721
+2025-12-03 12:20:21,559 - INFO - Inference batch size: 32
+2025-12-03 12:20:21,559 - INFO - Friendly agents padded during dataset preparation: 2
+2025-12-03 12:20:21,559 - INFO - Unauthorised agents padded during dataset preparation: 2
+2025-12-03 12:20:21,871 - INFO - Starting inference on test dataset...
+2025-12-03 12:22:24,064 - INFO - Total inference time: 122.19 seconds
+2025-12-03 12:22:24,065 - INFO - Average inference time per batch: 0.9546 seconds
+2025-12-03 12:22:24,065 - INFO - Average inference time per sequence: 0.0298 seconds
+2025-12-03 12:22:24,072 - INFO - Inference Evaluation Metrics:
+2025-12-03 12:22:24,072 - INFO - Accuracy: 1.0000, Precision: 0.0000, Recall: 0.0000, F1: 0.0000
+2025-12-03 12:22:24,072 - INFO - Confusion Matrix:
+[[4093]]
+2025-12-03 12:28:10,442 - INFO - 
+================================================================================
+Starting New Inference Session
+================================================================================
+2025-12-03 12:28:10,442 - INFO - Using device: cpu
+2025-12-03 12:28:10,442 - INFO - Experiment folder: experiments/20251201_180721
+2025-12-03 12:28:10,442 - INFO - Inference batch size: 32
+2025-12-03 12:28:10,443 - INFO - Friendly agents padded during dataset preparation: 2
+2025-12-03 12:28:10,443 - INFO - Unauthorised agents padded during dataset preparation: 2
+2025-12-03 12:28:10,754 - INFO - Starting inference on test dataset...
+2025-12-03 12:30:12,103 - INFO - Total inference time: 121.35 seconds
+2025-12-03 12:30:12,103 - INFO - Average inference time per batch: 0.9480 seconds
+2025-12-03 12:30:12,103 - INFO - Average inference time per sequence: 0.0296 seconds
+2025-12-03 12:30:12,107 - INFO - Inference Evaluation Metrics:
+2025-12-03 12:30:12,108 - INFO - Accuracy: 1.0000, Precision: 1.0000, Recall: 1.0000, F1: 1.0000
+2025-12-03 12:30:12,108 - INFO - Confusion Matrix:
+[[3254    0]
+ [   0  839]]
+2025-12-03 12:30:12,340 - INFO - Final Inference Accuracy: 1.0000

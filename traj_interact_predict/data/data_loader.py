@@ -12,6 +12,7 @@ Intended for use in multi-agent trajectory modeling and interaction classificati
 tasks where drones are categorized as friendly or unauthorized.
 """
 
+import random
 import torch
 import pandas as pd
 from torch.utils.data import Dataset, Subset
@@ -20,42 +21,30 @@ import numpy as np
 
 class DroneInteractionDataset(Dataset):
     """
-    PyTorch Dataset for drone interaction relation prediction.
+    Dataset for classifying drone interactions using sliding-window trajectory data.
 
-    This dataset processes drone trajectory data and interaction labels over
-    sliding time windows for each flight. It filters timesteps to only include
-    those with complete agent data, pads missing data if needed, and creates
-    pairs of friendly and unauthorized drones for interaction classification.
+    This dataset loads trajectory and interaction CSVs, builds fixed-length
+    lookback windows per flight, handles missing agents via padding (optional,
+    per-flight, and role-aware), and generates friendly→unauthorized agent pairs
+    with corresponding interaction labels.
 
-    Data is loaded from two CSV files: one for trajectories (position, velocity,
-    roles over time), and one for interaction relations (e.g., 'following').
-
-    Each sample consists of:
-    - A tensor of drone trajectories over a lookback window, shaped [lookback, num_agents, 6]
-        (with features: pos_x, pos_y, pos_z, vel_x, vel_y, vel_z).
-    - A tensor of agent role labels (friendly=0, unauthorized=1).
-    - A boolean mask indicating valid agents in the sample.
-    - A tensor of agent index pairs (friendly → unauthorized) for interaction prediction.
-    - A tensor of corresponding binary labels for each pair indicating interaction presence.
+    Each sample returns:
+        - trajectories: [lookback, num_agents, 6]
+        - roles: [num_agents] (0=friendly, 1=unauthorized, 2=padded)
+        - agent_mask: [num_agents] (1=valid, 0=padded)
+        - pairs: [num_pairs, 2] friendly→unauthorized index pairs
+        - labels: [num_pairs] binary interaction labels
 
     Args:
-        trajectory_csv (str): Path to the CSV file containing drone trajectories.
-        relation_csv (str): Path to the CSV file containing drone interactions.
-        lookback (int): Number of past timesteps in each sample window.
-        device (str or torch.device): Device to load tensors onto.
-        expected_agents (int): Number of agents expected per timestep (used for filtering).
-        transform (callable, optional): Optional transform to apply on trajectory tensors.
+        trajectory_csv (str): Path to trajectory CSV.
+        relation_csv (str): Path to interaction/relationship CSV.
+        lookback (int): Sliding window length.
+        device (str): Target device for tensors.
+        max_agents (int): Max agents per sample after padding.
         stride (int): Step size for sliding windows.
-
-    Example:
-        dataset = DroneInteractionDataset(
-            trajectory_csv="traj.csv",
-            relation_csv="relations.csv",
-            lookback=50,
-            device="cuda",
-            expected_agents=6,
-            stride=1,
-        )
+        num_friendly_to_pad (int): Number of friendly agents to randomly zero-pad.
+        num_unauth_to_pad (int): Number of unauthorized agents to randomly zero-pad.
+        transform (callable): Optional transform for trajectories.
     """
 
     def __init__(
@@ -67,7 +56,8 @@ class DroneInteractionDataset(Dataset):
         max_agents=6,
         transform=None,
         stride=1,
-        agents_to_pad=None,
+        num_friendly_to_pad=0,
+        num_unauth_to_pad=0,
     ):
         self.traj_df = pd.read_csv(trajectory_csv)
         self.relation_df = pd.read_csv(relation_csv)
@@ -77,9 +67,9 @@ class DroneInteractionDataset(Dataset):
         self.max_agents = max_agents
         self.transform = transform
         self.stride = stride
-        if agents_to_pad is None:
-            agents_to_pad = []
-        self.agents_to_pad = agents_to_pad
+        self.num_friendly_to_pad = num_friendly_to_pad
+        self.num_unauth_to_pad = num_unauth_to_pad
+        self.flight_padding_map = {}  # Per-flight padding plan
 
         # Role mapping
         self.role_map = {"friendly": 0, "unauthorized": 1}
@@ -106,6 +96,30 @@ class DroneInteractionDataset(Dataset):
             # Sliding window samples
             for start_idx in range(0, len(valid_timesteps) - self.lookback + 1, stride):
                 self.samples.append((fid, start_idx))
+
+            # Select drones to pad for this flight
+            friendly_ids = (
+                flight_data[flight_data["role"] == "friendly"]["drone_id"]
+                .unique()
+                .tolist()
+            )
+            unauth_ids = (
+                flight_data[flight_data["role"] == "unauthorized"]["drone_id"]
+                .unique()
+                .tolist()
+            )
+
+            # Randomize the ids for more robust padding
+            random.shuffle(friendly_ids)
+            random.shuffle(unauth_ids)
+
+            pad_friendly = friendly_ids[: self.num_friendly_to_pad]
+            pad_unauth = unauth_ids[: self.num_unauth_to_pad]
+
+            self.flight_padding_map[fid] = {
+                "friendly": pad_friendly,
+                "unauth": pad_unauth,
+            }
 
     def __len__(self):
         return len(self.samples)
@@ -153,15 +167,32 @@ class DroneInteractionDataset(Dataset):
             roles.append(role_val)
             agent_mask.append(1)  # Valid agent
 
+        # Convert to numpy
+        trajectories = np.stack(trajectories, axis=0)  # shape [num_agents, lookback, 6]
+
+        # Apply per-flight padding plan in agent_id space
+        pad_plan = self.flight_padding_map[flight_id]
+        pad_ids = pad_plan["friendly"] + pad_plan["unauth"]
+
+        for drone_id in pad_ids:
+            if drone_id in agent_id2idx:
+                pad_idx = agent_id2idx[drone_id]
+
+                # Zero out the trajectory
+                trajectories[pad_idx, :, :] = 0.0
+
+                # Set role to padding role
+                roles[pad_idx] = 2
+
+                # Mark invalid
+                agent_mask[pad_idx] = 0
+
         # Add padding if num_agents < max_agents
         if num_agents < self.max_agents:
             pad_size = self.max_agents - num_agents
 
             # Pad trajectories with zeros: shape [pad_size, lookback, 6]
             pad_traj = np.zeros((pad_size, self.lookback, 6), dtype=np.float32)
-            trajectories = np.stack(
-                trajectories, axis=0
-            )  # shape [num_agents, lookback, 6]
 
             # Shape [max_agents, lookback, 6]
             trajectories = np.concatenate([trajectories, pad_traj], axis=0)
@@ -171,21 +202,6 @@ class DroneInteractionDataset(Dataset):
 
             # Pad mask with 0 (invalid agent)
             agent_mask.extend([0] * pad_size)
-
-            # Induce padding actual agents for test purpose
-            # Start
-            agents_to_pad = self.agents_to_pad
-
-            for pad_idx in agents_to_pad:
-                # Zero out trajectories
-                trajectories[pad_idx, :, :] = 0.0
-
-                # Change role to padding role (2)
-                roles[pad_idx] = 2
-
-                # Set mask to False (invalid)
-                agent_mask[pad_idx] = 0
-            # End
 
         # Convert to torch
         trajectories = torch.tensor(
@@ -329,30 +345,28 @@ def load_datasets(
     lookback,
     device,
     max_agents=6,
-    agents_to_pad=None,
+    num_friendly_to_pad=0,
+    num_unauth_to_pad=0,
 ):
     """
-    Load the DroneInteractionDataset and split it into training, validation, and test subsets
-    by deterministic contiguous slicing of the dataset indices.
+    Load the DroneInteractionDataset and split it into train/val/test subsets.
+
+    Splits are computed by **deterministic contiguous slicing** (no shuffling).
+    Useful when the dataset is already time-ordered.
 
     Args:
-        val_split (float): Proportion of the dataset to allocate to the validation set (e.g., 0.1 for 10%).
-        test_split (float): Proportion of the dataset to allocate to the test set (e.g., 0.1 for 10%).
-        trajectory_csv (str): Path to the CSV file containing trajectory data.
-        relation_csv (str): Path to the CSV file containing relation data.
-        lookback (int): Number of timesteps to consider in each sample window.
-        device (str): Device to load tensors on, e.g., "cpu" or "cuda".
-        max_agents (int, optional): Maximum number of agents expected per sample. Defaults to 6.
+        val_split (float): Fraction of samples for validation.
+        test_split (float): Fraction of samples for testing.
+        trajectory_csv (str): Path to trajectory data CSV.
+        relation_csv (str): Path to interaction/label CSV.
+        lookback (int): Number of timesteps per sample.
+        device (str): "cpu" or "cuda".
+        max_agents (int): Max number of agents per sample.
+        num_friendly_to_pad (int): How many friendly agents to randomly pad per flight.
+        num_unauth_to_pad (int): How many unauthorized agents to randomly pad per flight.
 
     Returns:
-        tuple: A tuple containing three subsets of the dataset:
-            - train_set (torch.utils.data.Subset): Training subset containing the first samples.
-            - val_set (torch.utils.data.Subset): Validation subset containing the next samples.
-            - test_set (torch.utils.data.Subset): Test subset containing the final samples.
-
-    Note:
-        The splitting is deterministic and based on contiguous dataset indices,
-        not randomized.
+        (train_set, val_set, test_set): Dataset subsets as torch.utils.data.Subset.
     """
     dataset = DroneInteractionDataset(
         trajectory_csv=trajectory_csv,
@@ -360,7 +374,8 @@ def load_datasets(
         lookback=lookback,
         device=device,
         max_agents=max_agents,
-        agents_to_pad=agents_to_pad,
+        num_friendly_to_pad=num_friendly_to_pad,
+        num_unauth_to_pad=num_unauth_to_pad,
     )
 
     dataset_length = len(dataset)
