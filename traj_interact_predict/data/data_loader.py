@@ -338,15 +338,16 @@ def collate_fn(batch):
 
 
 def load_datasets(
-    val_split,
-    test_split,
     trajectory_csv,
     relation_csv,
     lookback,
     device,
+    val_split=0.15,
+    test_split=0.15,
     max_agents=6,
     num_friendly_to_pad=0,
     num_unauth_to_pad=0,
+    return_one_sample=False,
 ):
     """
     Load the DroneInteractionDataset and split it into train/val/test subsets.
@@ -377,6 +378,11 @@ def load_datasets(
         num_friendly_to_pad=num_friendly_to_pad,
         num_unauth_to_pad=num_unauth_to_pad,
     )
+    
+    # Return only one sample for SimAgent call
+    if return_one_sample:
+        idx = np.random.randint(0, len(dataset))
+        return dataset[idx]
 
     dataset_length = len(dataset)
     val_length = int(dataset_length * val_split)

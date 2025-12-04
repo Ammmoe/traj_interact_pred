@@ -74,7 +74,7 @@ def run_inference(
 
     # Load weights
     model_path = os.path.join(experiment_dir, "best_model.pt")
-    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
     model.eval()
 
     # Move inputs to device
