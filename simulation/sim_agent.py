@@ -3,10 +3,22 @@ Module for simulating an agent that predicts interaction pairs between friendly 
 agents based on trajectory data and agent roles.
 """
 
+from typing import cast, Tuple
+import numpy as np
 import torch
 from traj_interact_predict.data.data_loader import load_datasets
 from traj_interact_predict.utils.sim_agent_utils import filter_my_id
 from scripts.inference import run_inference
+
+
+# Define expected sample type from load_dataset
+ExpectedSampleType = Tuple[
+    torch.Tensor,  # trajectories
+    torch.Tensor,  # roles_tensor
+    torch.Tensor,  # agent_mask
+    torch.Tensor,  # pairs
+    torch.Tensor,  # labels
+]
 
 
 class SimAgent:
@@ -37,7 +49,7 @@ class SimAgent:
             (TRAJ_LEN, N_OTHER_AGENTS, N_FEATURES).
         """
         # Get one random sample from the dataset
-        one_random_sample = load_datasets(
+        _, _, test_set = load_datasets(
             trajectory_csv="data/drone_states.csv",
             relation_csv="data/drone_relations.csv",
             lookback=60,
@@ -45,14 +57,14 @@ class SimAgent:
             max_agents=6,
             num_friendly_to_pad=0,
             num_unauth_to_pad=0,
-            return_one_sample=True,
         )
 
-        if isinstance(one_random_sample, tuple) and len(one_random_sample) == 5:
-            # Extract the information from one_random_sample
-            trajectories, roles_tensor, agent_mask, pairs, labels = one_random_sample
-        else:
-            raise TypeError("Unexpected return value from load_datasets")
+        # Return only one sample for SimAgent call
+        idx = np.random.randint(0, len(test_set))
+        one_random_sample = cast(ExpectedSampleType, test_set[idx])
+
+        # Extract the information from one_random_sample
+        trajectories, roles_tensor, agent_mask, pairs, labels = one_random_sample
 
         # Filter the information without my_id agent
         (
@@ -211,7 +223,7 @@ def main():
     """
     Main function to create a SimAgent, track trajectories, and predict interactions.
     """
-    my_agent = SimAgent(my_id=0)
+    my_agent = SimAgent(my_id=5)
     agent_role, other_agents_traj = my_agent.sim_traj_tracker()
     interact_pair = my_agent.interact_predict(agent_role, other_agents_traj)
 
