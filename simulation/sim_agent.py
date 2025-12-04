@@ -48,14 +48,11 @@ class SimAgent:
             return_one_sample=True,
         )
 
-        # Extract the information from one_random_sample
-        (
-            trajectories,  # shape: (lookback=60, num_agents, 6)
-            roles_tensor,  # shape: (num_agents,)
-            agent_mask,  # shape: (num_agents,)
-            pairs,
-            labels,
-        ) = one_random_sample
+        if isinstance(one_random_sample, tuple) and len(one_random_sample) == 5:
+            # Extract the information from one_random_sample
+            trajectories, roles_tensor, agent_mask, pairs, labels = one_random_sample
+        else:
+            raise TypeError("Unexpected return value from load_datasets")
 
         # Filter the information without my_id agent
         (
@@ -78,7 +75,7 @@ class SimAgent:
         self.other_agents_ids = filtered_ids.cpu().numpy().tolist()
 
         # Map role integers to role strings
-        role_map = {0: "friendly", 1: "unauthorized"}
+        role_map: dict[int, str] = {0: "friendly", 1: "unauthorized"}
 
         # Create agent_role
         agent_role = {
@@ -88,7 +85,7 @@ class SimAgent:
 
         # Print self agent info from unfiltered roles
         try:
-            my_role_int = roles_tensor[self.my_id].item()
+            my_role_int = int(roles_tensor[self.my_id].item())
         except IndexError as e:
             raise IndexError(
                 f"self.my_id={self.my_id} is out of bounds for "

@@ -378,7 +378,7 @@ def load_datasets(
         num_friendly_to_pad=num_friendly_to_pad,
         num_unauth_to_pad=num_unauth_to_pad,
     )
-    
+
     # Return only one sample for SimAgent call
     if return_one_sample:
         idx = np.random.randint(0, len(dataset))
