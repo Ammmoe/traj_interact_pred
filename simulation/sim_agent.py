@@ -101,30 +101,6 @@ class SimAgent:
         for aid, role in agent_role.items():
             print(f"  Agent ID {aid}: {role}")
 
-        print("=== Original data before filtering ===")
-
-        # Original indices of agents
-        num_agents = trajectories.shape[1]
-        original_ids = list(range(num_agents))
-        print(f"Original agent indices: {original_ids}")
-
-        # Roles for all agents
-        role_map = {0: "friendly", 1: "unauthorized"}
-        roles_list = roles_tensor.tolist()
-        print("Original agent roles (index: role):")
-        for i, r in enumerate(roles_list):
-            role_str = role_map.get(r, "unknown")
-            print(f"  Index {i}: {role_str}")
-
-        # Pairs before filtering
-        print("\nOriginal pairs (agent indices):")
-        print(pairs.cpu().tolist())
-
-        print("\nOriginal labels for pairs:")
-        print(labels.cpu().tolist())
-
-        print("=" * 35)
-
         # Create list of filtered roles as ints
         filtered_roles_list = [int(r) for r in filtered_roles]
 
@@ -238,7 +214,7 @@ def main():
     """
     Main function to create a SimAgent, track trajectories, and predict interactions.
     """
-    my_agent = SimAgent(my_id=5)
+    my_agent = SimAgent(my_id=0)
     agent_role, other_agents_traj = my_agent.sim_traj_tracker()
     interact_pair = my_agent.interact_predict(agent_role, other_agents_traj)
 
