@@ -134,6 +134,7 @@ class DroneInteractionDataset(Dataset):
         agents = flight_data["drone_id"].unique().tolist()
         num_agents = len(agents)
         agent_id2idx = {agent: i for i, agent in enumerate(agents)}
+        idx2agent_id = {i: agent for agent, i in agent_id2idx.items()}
 
         trajectories = []
         roles = []
@@ -224,15 +225,23 @@ class DroneInteractionDataset(Dataset):
         # Build pairs and labels
         pairs, labels = [], []
         friendly_agents = [
-            a
-            for a in valid_agent_ids
-            if self.role_map[flight_data[flight_data["drone_id"] == a]["role"].iloc[0]]
+            idx
+            for idx in valid_agent_ids
+            if self.role_map[
+                flight_data[flight_data["drone_id"] == idx2agent_id[idx]]["role"].iloc[
+                    0
+                ]
+            ]
             == 0
         ]
         unauth_agents = [
-            a
-            for a in valid_agent_ids
-            if self.role_map[flight_data[flight_data["drone_id"] == a]["role"].iloc[0]]
+            idx
+            for idx in valid_agent_ids
+            if self.role_map[
+                flight_data[flight_data["drone_id"] == idx2agent_id[idx]]["role"].iloc[
+                    0
+                ]
+            ]
             == 1
         ]
 
@@ -240,9 +249,11 @@ class DroneInteractionDataset(Dataset):
 
         for src in friendly_agents:
             for tgt in unauth_agents:
-                pairs.append([agent_id2idx[src], agent_id2idx[tgt]])
-                mask = (flight_relations["drone_id"] == src) & (
-                    flight_relations["target_id"] == tgt
+                pairs.append([src, tgt])
+                src_id = idx2agent_id[src]
+                tgt_id = idx2agent_id[tgt]
+                mask = (flight_relations["drone_id"] == src_id) & (
+                    flight_relations["target_id"] == tgt_id
                 )
                 labels.append(
                     int(

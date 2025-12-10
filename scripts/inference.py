@@ -123,8 +123,8 @@ def main():
 
     # Inference config
     batch_size = 32
-    num_friendly_to_pad = 2
-    num_unauth_to_pad = 2
+    num_friendly_to_pad = 0
+    num_unauth_to_pad = 0
 
     # Log batch size and padded agents
     logger.info("Inference batch size: %d", batch_size)
