@@ -38,6 +38,14 @@ class DualEncoderModel(nn.Module):
             nn.Linear(embedding_dim, 1),  # binary classification: following or none
         )
 
+        self.layer_norm = nn.LayerNorm(embedding_dim * 5)
+
+        self.cross_agent_attn = nn.MultiheadAttention(
+            embed_dim=embedding_dim, num_heads=4, batch_first=True
+        )
+
+        self.attn_norm = nn.LayerNorm(embedding_dim)
+
     def forward(self, batch_trajectories, batch_roles, pairs_list):
         """
         Predicts relation logits for given agent pairs in a batch.
@@ -83,6 +91,26 @@ class DualEncoderModel(nn.Module):
                 unauth_input
             )  # [1, num_unauth, embed_dim]
 
+            ## Cross-agent attention layer to model interactions ##
+            # Concatenate agents into one sequence
+            all_emb = torch.cat(
+                [emb_friendly_all, emb_unauth_all], dim=1
+            )  # [1, num_friendly + num_unauth, embed_dim]
+
+            # Self-attention across all agents
+            attn_out, _ = self.cross_agent_attn(
+                query=all_emb, key=all_emb, value=all_emb
+            )  # [1, num_friendly + num_unauth, embed_dim]
+
+            # Residual + normalization
+            all_emb = self.attn_norm(all_emb + attn_out)
+
+            # Split back into roles
+            emb_friendly_all = all_emb[
+                :, :num_friendly, :
+            ]  # [1, num_friendly, embed_dim]
+            emb_unauth_all = all_emb[:, num_friendly:, :]  # [1, num_unauth, embed_dim]
+
             # Map original agent indices to embedding indices for lookup
             friendly_id_map = {
                 orig.item(): idx for idx, orig in enumerate(friendly_ids)
@@ -117,12 +145,14 @@ class DualEncoderModel(nn.Module):
                     [
                         emb_friendly,
                         emb_unauth,
-                        torch.abs(emb_friendly - emb_unauth), # to capture magnitude
-                        emb_friendly - emb_unauth, # to capture direction
+                        torch.abs(emb_friendly - emb_unauth),  # to capture magnitude
+                        emb_friendly - emb_unauth,  # to capture direction
                         emb_friendly * emb_unauth,
                     ],
                     dim=-1,
                 )
+
+                relation_vector = self.layer_norm(relation_vector)
 
                 logit = self.classifier(relation_vector)  # [1, 1]
                 batch_logits.append(logit)

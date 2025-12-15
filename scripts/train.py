@@ -32,7 +32,7 @@ from traj_interact_predict.utils.logger import get_logger
 
 def main():
     # pylint: disable=all
-    RESUME_TRAINING = True
+    RESUME_TRAINING = False
     if RESUME_TRAINING:
         exp_dir = "experiments/20251128_131148"
         RESUME_CHECKPOINT = os.path.join(exp_dir, "checkpoint.pt")
@@ -59,7 +59,7 @@ def main():
     VAL_SPLIT = 0.15
     TEST_SPLIT = 0.15
     MAX_AGENTS = 6
-    LOOKBACK = 50
+    LOOKBACK = 120
 
     # Model parameters
     encoder_params = {
