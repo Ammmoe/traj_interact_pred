@@ -144,41 +144,40 @@ class DualEncoderModel(nn.Module):
                 logits_all.append(torch.empty((0, 1), device=batch_trajectories.device))
                 continue
 
-            batch_logits = []
-            for friendly_id, unauth_id in pairs:
-                f_idx = friendly_id_map.get(friendly_id.item(), None)
-                u_idx = unauth_id_map.get(unauth_id.item(), None)
+            # Convert original agent ids to embedding indices for all pairs
+            friendly_indices = torch.tensor(
+                [friendly_id_map[f.item()] for f, _ in pairs],
+                device=all_emb.device,
+                dtype=torch.long,
+            )
+            unauth_indices = torch.tensor(
+                [unauth_id_map[u.item()] for _, u in pairs],
+                device=all_emb.device,
+                dtype=torch.long,
+            )
 
-                # Actually None pairs are ommitted during data loading process
-                # This is just a safety net # (sigmoid(0) = 0.5)
-                if f_idx is None or u_idx is None:
-                    batch_logits.append(
-                        torch.zeros(1, 1, device=batch_trajectories.device)
-                    )
-                    continue
+            # Gather embeddings for all pairs
+            emb_friendly = emb_friendly_all[
+                0, friendly_indices, :
+            ]  # [num_pairs, embed_dim]
+            emb_unauth = emb_unauth_all[0, unauth_indices, :]  # [num_pairs, embed_dim]
 
-                emb_friendly = emb_friendly_all[0, f_idx, :].unsqueeze(
-                    0
-                )  # [1, embed_dim]
-                emb_unauth = emb_unauth_all[0, u_idx, :].unsqueeze(0)  # [1, embed_dim]
+            # Build relation vectors
+            relation_vector = torch.cat(
+                [
+                    emb_friendly,
+                    emb_unauth,
+                    torch.abs(emb_friendly - emb_unauth),
+                    emb_friendly - emb_unauth,
+                    emb_friendly * emb_unauth,
+                ],
+                dim=-1,
+            )  # [num_pairs, 5 * embed_dim]
 
-                relation_vector = torch.cat(
-                    [
-                        emb_friendly,
-                        emb_unauth,
-                        torch.abs(emb_friendly - emb_unauth),  # to capture magnitude
-                        emb_friendly - emb_unauth,  # to capture direction
-                        emb_friendly * emb_unauth,
-                    ],
-                    dim=-1,
-                )
+            # Normalize and classify
+            relation_vector = self.layer_norm(relation_vector)
+            batch_logits = self.classifier(relation_vector)  # [num_pairs, 1]
 
-                relation_vector = self.layer_norm(relation_vector)
-
-                logit = self.classifier(relation_vector)  # [1, 1]
-                batch_logits.append(logit)
-
-            batch_logits = torch.cat(batch_logits, dim=0)  # [num_pairs, 1]
             logits_all.append(batch_logits)
 
         return logits_all
