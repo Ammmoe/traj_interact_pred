@@ -46,6 +46,11 @@ class DualEncoderModel(nn.Module):
 
         self.attn_norm = nn.LayerNorm(embedding_dim)
 
+        self.role_embedding = nn.Embedding(
+            num_embeddings=2,  # 0=friendly, 1=unauthorized
+            embedding_dim=embedding_dim,
+        )
+
     def forward(self, batch_trajectories, batch_roles, pairs_list):
         """
         Predicts relation logits for given agent pairs in a batch.
@@ -92,10 +97,26 @@ class DualEncoderModel(nn.Module):
             )  # [1, num_unauth, embed_dim]
 
             ## Cross-agent attention layer to model interactions ##
-            # Concatenate agents into one sequence
+            # Concatenate agents into one sequence (along agents dimension)
             all_emb = torch.cat(
                 [emb_friendly_all, emb_unauth_all], dim=1
             )  # [1, num_friendly + num_unauth, embed_dim]
+
+            # Add role embeddings
+            friendly_roles = torch.zeros(
+                (1, num_friendly), dtype=torch.long, device=all_emb.device
+            )  # 0 for friendly
+            unauth_roles = torch.ones(
+                (1, num_unauth), dtype=torch.long, device=all_emb.device
+            )  # 1 for unauthorized
+            role_ids = torch.cat(
+                [friendly_roles, unauth_roles], dim=1
+            )  # [1, total_agents]
+
+            role_embeddings = self.role_embedding(
+                role_ids
+            )  # [1, total_agents, embed_dim]
+            all_emb = all_emb + role_embeddings  # [1, total_agents, embed_dim]
 
             # Self-attention across all agents
             attn_out, _ = self.cross_agent_attn(

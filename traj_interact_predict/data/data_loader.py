@@ -86,6 +86,9 @@ class DroneInteractionDataset(Dataset):
         self.flight_groups = {}
         self.flight_valid_timesteps = {}
 
+        # Down sampling rate
+        self.downsample_rate = 3
+
         flights = self.traj_df["flight_id"].unique()
         for fid in flights:
             flight_data = self.traj_df[self.traj_df["flight_id"] == fid].sort_values(
@@ -154,6 +157,11 @@ class DroneInteractionDataset(Dataset):
         if self.transform:
             trajectories = self.transform(trajectories)
         trajectories = trajectories.transpose(0, 1)  # [lookback, num_agents, 6]
+
+        # Add down sampling from 120 to 40 timesteps
+        trajectories = trajectories[
+            :: self.downsample_rate, :, :
+        ]  # [lookback/3, num_agents, 6]
 
         roles_tensor = torch.tensor(
             [self.role_map[r] for r in roles], dtype=torch.long, device=self.device
