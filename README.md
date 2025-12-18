@@ -229,3 +229,24 @@ Run inference with:
 ```bash
 python -m scripts.inference
 ```
+
+---
+
+## 🚁 Running the Simulation Agent
+
+The simulation agent runs a trajectory tracking and interaction prediction loop using the trained dual-encoder Bi-GRU model.
+
+### ▶️ Command to Run
+
+```python
+python -m simulation.sim_agent
+```
+
+### 📝 What It Does
+
+- Initializes the simulation agent  
+- Tracks and generates trajectories of multiple agents  
+- Uses the trained interaction classifier to predict interaction pairs between friendly and unauthorized agents  
+- Prints out predicted interaction pairs with their confidence labels
+
+---
