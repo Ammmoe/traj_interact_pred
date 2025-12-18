@@ -6,6 +6,7 @@ requires-python = ">=3.10"
 [project.scripts]
 train-traj-interact = "scripts.train:main"
 infer-traj-interact = "scripts.inference:main"
+sim-agent = "simulation.sim_agent:main"
 
 [build-system]
 requires = ["setuptools"]
