@@ -36,7 +36,6 @@ class SimAgent:
         """Initialize SimAgent with its own ID."""
         # Save my_id and other_agents_ids
         self.my_id = my_id
-        self.other_agents_ids = []
 
     def sim_traj_tracker(self):
         """
@@ -82,9 +81,6 @@ class SimAgent:
             labels=labels,
             my_id=self.my_id,
         )
-
-        # Save the actual agent IDs (critical)
-        self.other_agents_ids = filtered_ids.cpu().numpy().tolist()
 
         # Map role integers to role strings
         role_map: dict[int, str] = {0: "friendly", 1: "unauthorized"}
@@ -156,35 +152,23 @@ class SimAgent:
             interact_pair (list): List of tuples
                 (friendly_agent_id, unauthorized_agent_id, follow_flag).
         """
+        # Extract agent IDs in the order that aligns with trajectories
+        other_agents_ids = list(agent_role.keys())
+
         # Convert trajectory shape and data type
         trajectories = torch.tensor(other_agents_traj, dtype=torch.float32).unsqueeze(
             0
         )  # (1, lookback, num_agents, features)
 
-        # Define sorted agent ID order
-        sorted_ids = sorted(self.other_agents_ids)
-
-        # Compute index order mapping
-        idx_order = [self.other_agents_ids.index(aid) for aid in sorted_ids]
-
-        # Reorder trajectories along agent dimension (dim=2)
-        trajectories = trajectories[:, :, idx_order, :]
-
-        # Reorder other_agents_ids
-        self.other_agents_ids = sorted_ids
-
         # Build roles from reordered IDs
         role_map_reverse = {"friendly": 0, "unauthorized": 1}
         roles = torch.tensor(
-            [
-                role_map_reverse[agent_role[agent_id]]
-                for agent_id in self.other_agents_ids
-            ],
+            [role_map_reverse[agent_role[agent_id]] for agent_id in other_agents_ids],
             dtype=torch.long,
         ).unsqueeze(0)  # (1, num_agents)
 
         # Create agent mask
-        agent_mask = torch.ones(len(self.other_agents_ids), dtype=torch.bool).unsqueeze(
+        agent_mask = torch.ones(len(other_agents_ids), dtype=torch.bool).unsqueeze(
             0
         )  # (1, num_agents)
 
@@ -211,8 +195,8 @@ class SimAgent:
         # Map pairs back to actual agent IDs
         interact_pair = []
         for i, (friendly_idx, unauth_idx) in enumerate(pairs_list):
-            friendly_id = self.other_agents_ids[friendly_idx]
-            unauth_id = self.other_agents_ids[unauth_idx]
+            friendly_id = other_agents_ids[friendly_idx]
+            unauth_id = other_agents_ids[unauth_idx]
             follow_flag = preds[i].item()
             interact_pair.append((friendly_id, unauth_id, follow_flag))
 
@@ -223,7 +207,7 @@ def main():
     """
     Main function to create a SimAgent, track trajectories, and predict interactions.
     """
-    my_agent = SimAgent(my_id=5)
+    my_agent = SimAgent(my_id=0)
     agent_role, other_agents_traj = my_agent.sim_traj_tracker()
     interact_pair = my_agent.interact_predict(agent_role, other_agents_traj)
 
