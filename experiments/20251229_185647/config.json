@@ -1,0 +1,20 @@
+{
+    "device": "cuda",
+    "model_module": "traj_interact_predict.models.dual_encoder_classifier",
+    "model_class": "DualEncoderModel",
+    "encoder_module": "traj_interact_predict.models.bi_gru_encoder",
+    "encoder_class": "TrajEmbeddingExtractor",
+    "encoder_params": {
+        "input_size": 6,
+        "enc_hidden_size": 64,
+        "embedding_dim": 64,
+        "num_layers": 1
+    },
+    "MAX_AGENTS": 6,
+    "LOOK_BACK": 120,
+    "EPOCHS": 50,
+    "BATCH_SIZE": 32,
+    "LEARNING_RATE": 0.001,
+    "SET_SEED": false,
+    "SEED": null
+}
