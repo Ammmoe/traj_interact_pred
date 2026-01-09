@@ -6,12 +6,12 @@ This repository provides a **training pipeline** for classifying drone interacti
 
 ## ⚙️ Model Architecture
 
-### 🔷 Dual-Encoder Classifier (Full Model Overview)
+### 🔷 Attention-Enhanced Dual-Encoder Classifier (Full Model Overview)
 
-This architecture independently encodes the trajectories of two agent types using **Bi-GRU encoders**.  
-Their embeddings are then combined and passed into a classifier to predict the interaction type between the agent pair.
+Two Bi-GRU encoders independently generate embeddings for each agent type.  
+A Cross-Agent Self-Attention Transformer captures interactions between embeddings, followed by an MLP classifier to predict interaction types.
 
-> **Figure 1. Dual-Encoder Interaction Classifier**  
+> **Figure 1. Attention-Enhanced Dual-Encoder Classifier**  
 > *(High-level overview of the full model)*
 
 ![Dual Encoder Architecture](Dual-Encoder-Classifier.png)
