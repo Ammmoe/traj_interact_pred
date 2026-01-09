@@ -15,8 +15,10 @@ tasks where drones are categorized as friendly or unauthorized.
 import random
 import torch
 import pandas as pd
-from torch.utils.data import Dataset, Subset
+from torch.utils.data import Dataset
 import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
 
 
 class DroneInteractionDataset(Dataset):
@@ -49,8 +51,8 @@ class DroneInteractionDataset(Dataset):
 
     def __init__(
         self,
-        trajectory_csv,
-        relation_csv,
+        traj_df,
+        relation_df,
         lookback=50,
         device="cpu",
         max_agents=6,
@@ -59,13 +61,12 @@ class DroneInteractionDataset(Dataset):
         num_friendly_to_pad=0,
         num_unauth_to_pad=0,
     ):
-        self.traj_df = pd.read_csv(trajectory_csv)
-        self.relation_df = pd.read_csv(relation_csv)
+        self.traj_df = traj_df.reset_index(drop=True)
+        self.relation_df = relation_df.reset_index(drop=True)
         self.lookback = lookback
         self.device = device
         self.transform = transform
         self.max_agents = max_agents
-        self.transform = transform
         self.stride = stride
         self.num_friendly_to_pad = num_friendly_to_pad
         self.num_unauth_to_pad = num_unauth_to_pad
@@ -78,6 +79,9 @@ class DroneInteractionDataset(Dataset):
         self.samples = []  # list of (flight_id, start_idx)
         self.flight_groups = {}
         self.flight_valid_timesteps = {}
+
+        # Down sampling rate
+        self.downsample_rate = 3
 
         flights = self.traj_df["flight_id"].unique()
         for fid in flights:
@@ -221,6 +225,10 @@ class DroneInteractionDataset(Dataset):
         # valid_agent_ids = agents  # Original list
         # Check for agent mask instead of looking at original unique list for inducing padding
         valid_agent_ids = [i for i, m in enumerate(agent_mask) if m == 1]
+        # Add down sampling from 120 to 40 timesteps
+        trajectories = trajectories[
+            :: self.downsample_rate, :, :
+        ]  # [lookback/3, num_agents, 6]
 
         # Build pairs and labels
         pairs, labels = [], []
@@ -377,11 +385,59 @@ def load_datasets(
         num_unauth_to_pad (int): How many unauthorized agents to randomly pad per flight.
 
     Returns:
-        (train_set, val_set, test_set): Dataset subsets as torch.utils.data.Subset.
+        (train_set, val_set, test_set, scaler): Dataset subsets as torch.utils.data.Subset.
+    max_agents=6,
+):
     """
-    dataset = DroneInteractionDataset(
-        trajectory_csv=trajectory_csv,
-        relation_csv=relation_csv,
+    # Step 1: Load raw data
+    traj_df = pd.read_csv(trajectory_csv)
+    rel_df = pd.read_csv(relation_csv)
+
+    # Step 2: Split flight ids for train/val/test
+    flight_ids = traj_df["flight_id"].unique()
+
+    # Split test flights first
+    train_val_flights, test_flights = train_test_split(
+        flight_ids, test_size=test_split, random_state=42
+    )
+    # Split val flights from train_val
+    train_flights, val_flights = train_test_split(
+        train_val_flights, test_size=val_split / (1 - test_split), random_state=42
+    )
+
+    # Step 3: Fit scaler on training flights only
+    train_df = traj_df[traj_df["flight_id"].isin(train_flights)]
+
+    feature_cols = ["pos_x", "pos_y", "pos_z", "vel_x", "vel_y", "vel_z"]
+
+    scaler = StandardScaler()
+    scaler.fit(train_df[feature_cols])
+
+    # Step 4: Scale all data
+    traj_df.loc[:, feature_cols] = scaler.transform(traj_df[feature_cols])
+
+    # Step 5: Create dataset objects for each split with filtered flights
+    train_set = DroneInteractionDataset(
+        traj_df[traj_df["flight_id"].isin(train_flights)],
+        rel_df,
+        lookback=lookback,
+        device=device,
+        max_agents=max_agents,
+        num_friendly_to_pad=num_friendly_to_pad,
+        num_unauth_to_pad=num_unauth_to_pad,
+    )
+    val_set = DroneInteractionDataset(
+        traj_df[traj_df["flight_id"].isin(val_flights)],
+        rel_df,
+        lookback=lookback,
+        device=device,
+        max_agents=max_agents,
+        num_friendly_to_pad=num_friendly_to_pad,
+        num_unauth_to_pad=num_unauth_to_pad,
+    )
+    test_set = DroneInteractionDataset(
+        traj_df[traj_df["flight_id"].isin(test_flights)],
+        rel_df,
         lookback=lookback,
         device=device,
         max_agents=max_agents,
@@ -389,18 +445,4 @@ def load_datasets(
         num_unauth_to_pad=num_unauth_to_pad,
     )
 
-    dataset_length = len(dataset)
-    val_length = int(dataset_length * val_split)
-    test_length = int(dataset_length * test_split)
-    train_length = dataset_length - val_length - test_length
-
-    # Deterministic split by index slicing
-    train_indices = list(range(0, train_length))
-    val_indices = list(range(train_length, train_length + val_length))
-    test_indices = list(range(train_length + val_length, dataset_length))
-
-    train_set = Subset(dataset, train_indices)
-    val_set = Subset(dataset, val_indices)
-    test_set = Subset(dataset, test_indices)
-
-    return train_set, val_set, test_set
+    return train_set, val_set, test_set, scaler

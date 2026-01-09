@@ -33,9 +33,22 @@ class DualEncoderModel(nn.Module):
         self.encoder_unauth = encoder_unauth  # unauthorized encoder
 
         self.classifier = nn.Sequential(
-            nn.Linear(embedding_dim * 4, embedding_dim),
+            nn.Linear(embedding_dim * 5, embedding_dim),
             nn.ReLU(),
             nn.Linear(embedding_dim, 1),  # binary classification: following or none
+        )
+
+        self.layer_norm = nn.LayerNorm(embedding_dim * 5)
+
+        self.cross_agent_attn = nn.MultiheadAttention(
+            embed_dim=embedding_dim, num_heads=4, batch_first=True
+        )
+
+        self.attn_norm = nn.LayerNorm(embedding_dim)
+
+        self.role_embedding = nn.Embedding(
+            num_embeddings=2,  # 0=friendly, 1=unauthorized
+            embedding_dim=embedding_dim,
         )
 
     def forward(self, batch_trajectories, batch_roles, pairs_list, batch_agent_mask):
@@ -86,6 +99,42 @@ class DualEncoderModel(nn.Module):
                 unauth_input
             )  # [1, num_unauth, embed_dim]
 
+            ## Cross-agent attention layer to model interactions ##
+            # Concatenate agents into one sequence (along agents dimension)
+            all_emb = torch.cat(
+                [emb_friendly_all, emb_unauth_all], dim=1
+            )  # [1, num_friendly + num_unauth, embed_dim]
+
+            # Add role embeddings
+            friendly_roles = torch.zeros(
+                (1, num_friendly), dtype=torch.long, device=all_emb.device
+            )  # 0 for friendly
+            unauth_roles = torch.ones(
+                (1, num_unauth), dtype=torch.long, device=all_emb.device
+            )  # 1 for unauthorized
+            role_ids = torch.cat(
+                [friendly_roles, unauth_roles], dim=1
+            )  # [1, total_agents]
+
+            role_embeddings = self.role_embedding(
+                role_ids
+            )  # [1, total_agents, embed_dim]
+            all_emb = all_emb + role_embeddings  # [1, total_agents, embed_dim]
+
+            # Self-attention across all agents
+            attn_out, _ = self.cross_agent_attn(
+                query=all_emb, key=all_emb, value=all_emb
+            )  # [1, num_friendly + num_unauth, embed_dim]
+
+            # Residual + normalization
+            all_emb = self.attn_norm(all_emb + attn_out)
+
+            # Split back into roles
+            emb_friendly_all = all_emb[
+                :, :num_friendly, :
+            ]  # [1, num_friendly, embed_dim]
+            emb_unauth_all = all_emb[:, num_friendly:, :]  # [1, num_unauth, embed_dim]
+
             # Map original agent indices to embedding indices for lookup
             friendly_id_map = {
                 orig.item(): idx for idx, orig in enumerate(friendly_ids)
@@ -105,36 +154,40 @@ class DualEncoderModel(nn.Module):
                     # If invalid agent in pair, skip
                     continue
 
-                f_idx = friendly_id_map.get(friendly_id.item(), None)
-                u_idx = unauth_id_map.get(unauth_id.item(), None)
+            # Convert original agent ids to embedding indices for all pairs
+            friendly_indices = torch.tensor(
+                [friendly_id_map[f.item()] for f, _ in pairs],
+                device=all_emb.device,
+                dtype=torch.long,
+            )
+            unauth_indices = torch.tensor(
+                [unauth_id_map[u.item()] for _, u in pairs],
+                device=all_emb.device,
+                dtype=torch.long,
+            )
 
-                # Actually None pairs are ommitted during data loading process
-                # This is just a safety net # (sigmoid(0) = 0.5)
-                if f_idx is None or u_idx is None:
-                    batch_logits.append(
-                        torch.zeros(1, 1, device=batch_trajectories.device)
-                    )
-                    continue
+            # Gather embeddings for all pairs
+            emb_friendly = emb_friendly_all[
+                0, friendly_indices, :
+            ]  # [num_pairs, embed_dim]
+            emb_unauth = emb_unauth_all[0, unauth_indices, :]  # [num_pairs, embed_dim]
 
-                emb_friendly = emb_friendly_all[0, f_idx, :].unsqueeze(
-                    0
-                )  # [1, embed_dim]
-                emb_unauth = emb_unauth_all[0, u_idx, :].unsqueeze(0)  # [1, embed_dim]
+            # Build relation vectors
+            relation_vector = torch.cat(
+                [
+                    emb_friendly,
+                    emb_unauth,
+                    torch.abs(emb_friendly - emb_unauth),
+                    emb_friendly - emb_unauth,
+                    emb_friendly * emb_unauth,
+                ],
+                dim=-1,
+            )  # [num_pairs, 5 * embed_dim]
 
-                relation_vector = torch.cat(
-                    [
-                        emb_friendly,
-                        emb_unauth,
-                        torch.abs(emb_friendly - emb_unauth),
-                        emb_friendly * emb_unauth,
-                    ],
-                    dim=-1,
-                )
+            # Normalize and classify
+            relation_vector = self.layer_norm(relation_vector)
+            batch_logits = self.classifier(relation_vector)  # [num_pairs, 1]
 
-                logit = self.classifier(relation_vector)  # [1, 1]
-                batch_logits.append(logit)
-
-            batch_logits = torch.cat(batch_logits, dim=0)  # [num_pairs, 1]
             logits_all.append(batch_logits)
 
         return logits_all

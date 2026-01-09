@@ -16,6 +16,7 @@ Features:
 import os
 import time
 import json
+import joblib
 import torch
 from torch.utils.data import DataLoader
 from traj_interact_predict.data.data_loader import load_datasets
@@ -33,7 +34,7 @@ def main():
     # pylint: disable=all
     RESUME_TRAINING = False
     if RESUME_TRAINING:
-        exp_dir = "experiments/20251119_184413"
+        exp_dir = "experiments/20251128_131148"
         RESUME_CHECKPOINT = os.path.join(exp_dir, "checkpoint.pt")
         logger, _ = get_logger(exp_dir=exp_dir)
     else:
@@ -57,8 +58,8 @@ def main():
     LR = 1e-3
     VAL_SPLIT = 0.15
     TEST_SPLIT = 0.15
-    MAX_AGENTS = 10
-    LOOKBACK = 50
+    MAX_AGENTS = 6
+    LOOKBACK = 120
     NUM_FRIENDLY_TO_PAD = 0
     NUM_UNAUTH_TO_PAD = 0
 
@@ -74,7 +75,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Load datasets
-    train_set, val_set, test_set = load_datasets(
+    train_set, val_set, test_set, scaler = load_datasets(
         trajectory_csv="data/drone_states.csv",
         relation_csv="data/drone_relations.csv",
         val_split=VAL_SPLIT,
@@ -241,6 +242,8 @@ def main():
     # Save last-epoch model
     finally:
         torch.save(model.state_dict(), last_model_path)
+        # Save scaler
+        joblib.dump(scaler, os.path.join(exp_dir, "scaler.pkl"))
 
     # If training completed without early stopping
     if not early_stop:
