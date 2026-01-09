@@ -53,33 +53,18 @@ class TrajEmbeddingExtractor(nn.Module):
         Encode trajectories into embeddings per agent.
 
         Args:
-            src (Tensor): [batch_size, seq_len, num_agents * input_size]
-                Concatenated trajectories for all agents in the batch.
+            src (Tensor): [batch_size * num_agents, seq_len, input_size]
 
         Returns:
-            Tensor: [batch_size, num_agents, embedding_dim]
-                Embeddings representing each agent's past trajectory.
+            Tensor: [batch_size * num_agents, embedding_dim]
         """
-        batch_size, lookback, total_features = src.size()
-        num_agents = total_features // self.input_size
-
-        # Reshape to [batch_size * num_agents, lookback, input_size]
-        src = src.view(batch_size, lookback, num_agents, self.input_size)
-        src = src.permute(0, 2, 1, 3)  # [batch_size, num_agents, lookback, input_size]
-        src = src.reshape(batch_size * num_agents, lookback, self.input_size)
-
-        # hidden_shape: [num_layers * 2, batch_size * num_agents, enc_hidden_size]
         _, hidden = self.encoder(src)
 
-        # Concatenate last layer's forward and backward hidden states
+        # hidden shape: [num_layers * 2, batch_size * num_agents, enc_hidden_size]
+        # Take last layer's forward and backward hidden states
         hidden_cat = torch.cat(
             [hidden[-2], hidden[-1]], dim=1
         )  # [batch_size * num_agents, enc_hidden_size * 2]
 
-        # Linear projection to embedding dimension
         emb = self.enc_to_embed(hidden_cat)  # [batch_size * num_agents, embedding_dim]
-
-        # Reshape back to [batch_size, num_agents, embedding_dim]
-        emb = emb.view(batch_size, num_agents, self.embedding_dim)
-
         return emb
