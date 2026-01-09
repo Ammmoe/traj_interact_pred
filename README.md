@@ -9,7 +9,7 @@ This repository provides a **training pipeline** for classifying drone interacti
 ### 🔷 Attention-Enhanced Dual-Encoder Classifier (Full Model Overview)
 
 Two Bi-GRU encoders independently generate embeddings for each agent type.  
-A Cross-Agent Self-Attention Transformer captures interactions between embeddings, followed by an MLP classifier to predict interaction types.
+A Cross-Agent Self-Attention Transformer captures interactions between agent embeddings, followed by an MLP classifier to predict interaction types.
 
 > **Figure 1. Attention-Enhanced Dual-Encoder Classifier**  
 > *(High-level overview of the full model)*
