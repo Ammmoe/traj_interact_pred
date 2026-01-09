@@ -28,6 +28,7 @@ from traj_interact_predict.utils.train_utils import (
     calculate_evaluation_scores,
 )
 from traj_interact_predict.utils.logger import get_logger
+import torch.multiprocessing as mp
 
 
 def main():
@@ -74,6 +75,10 @@ def main():
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    # Set multiprocessing start method to spawn if using CUDA to avoid fork error
+    if device.type == "cuda":
+        mp.set_start_method("spawn", force=True)
+
     # Load datasets
     train_set, val_set, test_set, scaler = load_datasets(
         trajectory_csv="data/drone_states.csv",
@@ -110,10 +115,32 @@ def main():
         "Unauthorised agents padded during dataset preparation: %s", NUM_UNAUTH_TO_PAD
     )
 
+    # Set up num_workers to speed up data loading
+    # Use 0 workers on Windows by default, can be > 0 on Unix-based systems
+    num_workers = 0 if os.name == "nt" else 4
+
     # DataLoaders ([B, num_drones, lookback, feat_dim])
-    train_loader = DataLoader(train_set, batch_size=BATCH_SIZE, shuffle=True)
-    val_loader = DataLoader(val_set, batch_size=BATCH_SIZE, shuffle=False)
-    test_loader = DataLoader(test_set, batch_size=BATCH_SIZE, shuffle=False)
+    train_loader = DataLoader(
+        train_set,
+        batch_size=BATCH_SIZE,
+        shuffle=True,
+        num_workers=num_workers,
+        pin_memory=(device.type == "cuda"),
+    )
+    val_loader = DataLoader(
+        val_set,
+        batch_size=BATCH_SIZE,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=(device.type == "cuda"),
+    )
+    test_loader = DataLoader(
+        test_set,
+        batch_size=BATCH_SIZE,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=(device.type == "cuda"),
+    )
 
     # Initialize trajectory encoders
     encoder_friendly = TrajEmbeddingExtractor(**encoder_params).to(device)
