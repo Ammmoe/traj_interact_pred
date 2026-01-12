@@ -78,6 +78,14 @@ def main():
     # Set multiprocessing start method to spawn if using CUDA to avoid fork error
     if device.type == "cuda":
         mp.set_start_method("spawn", force=True)
+        
+    # DataLoader configuration
+    # Set up num_workers to speed up data loading
+    # Use 0 workers on Windows by default, can be > 0 on Unix-based systems
+    NUM_WORKERS = 0 if os.name == "nt" else 4
+    PIN_MEMORY = (device.type == "cuda")
+    PERSISTENT_WORKERS = (NUM_WORKERS > 0)
+    PREFETCH_FACTOR = 2 if NUM_WORKERS > 0 else None
 
     # Load datasets
     train_set, val_set, test_set, scaler = load_datasets(
@@ -115,37 +123,33 @@ def main():
         "Unauthorised agents padded during dataset preparation: %s", NUM_UNAUTH_TO_PAD
     )
 
-    # Set up num_workers to speed up data loading
-    # Use 0 workers on Windows by default, can be > 0 on Unix-based systems
-    num_workers = 0 if os.name == "nt" else 4
-
     # DataLoaders ([B, num_drones, lookback, feat_dim])
     train_loader = DataLoader(
         train_set,
         batch_size=BATCH_SIZE,
         shuffle=True,
-        num_workers=num_workers,
-        pin_memory=(device.type == "cuda"),
-        persistent_workers=(num_workers > 0),
-        prefetch_factor=2 if num_workers > 0 else 0,
+        num_workers=NUM_WORKERS,
+        pin_memory=PIN_MEMORY,
+        persistent_workers=PERSISTENT_WORKERS,
+        prefetch_factor=PREFETCH_FACTOR,
     )
     val_loader = DataLoader(
         val_set,
         batch_size=BATCH_SIZE,
         shuffle=False,
-        num_workers=num_workers,
-        pin_memory=(device.type == "cuda"),
-        persistent_workers=(num_workers > 0),
-        prefetch_factor=2 if num_workers > 0 else 0,
+        num_workers=NUM_WORKERS,
+        pin_memory=PIN_MEMORY,
+        persistent_workers=PERSISTENT_WORKERS,
+        prefetch_factor=PREFETCH_FACTOR,
     )
     test_loader = DataLoader(
         test_set,
         batch_size=BATCH_SIZE,
         shuffle=False,
-        num_workers=num_workers,
-        pin_memory=(device.type == "cuda"),
-        persistent_workers=(num_workers > 0),
-        prefetch_factor=2 if num_workers > 0 else 0,
+        num_workers=NUM_WORKERS,
+        pin_memory=PIN_MEMORY,
+        persistent_workers=PERSISTENT_WORKERS,
+        prefetch_factor=PREFETCH_FACTOR,
     )
 
     # Initialize trajectory encoders
