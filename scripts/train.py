@@ -104,6 +104,7 @@ def main():
         len(val_set),
         len(test_set),
     )
+    logger.info("Past timesteps (lookback): %d", LOOKBACK)
     logger.info(
         "Batch size: %d, Planned epochs: %d, Learning rate: %s", BATCH_SIZE, EPOCHS, LR
     )
@@ -125,6 +126,8 @@ def main():
         shuffle=True,
         num_workers=num_workers,
         pin_memory=(device.type == "cuda"),
+        persistent_workers=(num_workers > 0),
+        prefetch_factor=2 if num_workers > 0 else 0,
     )
     val_loader = DataLoader(
         val_set,
@@ -132,6 +135,8 @@ def main():
         shuffle=False,
         num_workers=num_workers,
         pin_memory=(device.type == "cuda"),
+        persistent_workers=(num_workers > 0),
+        prefetch_factor=2 if num_workers > 0 else 0,
     )
     test_loader = DataLoader(
         test_set,
@@ -139,6 +144,8 @@ def main():
         shuffle=False,
         num_workers=num_workers,
         pin_memory=(device.type == "cuda"),
+        persistent_workers=(num_workers > 0),
+        prefetch_factor=2 if num_workers > 0 else 0,
     )
 
     # Initialize trajectory encoders
