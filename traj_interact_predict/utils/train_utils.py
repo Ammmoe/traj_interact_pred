@@ -55,15 +55,15 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
     ) in tqdm(loader, desc="Training", leave=True, ncols=100):
         # Move tensors to device
         batch_trajectories = batch_trajectories.to(
-            device
+            device, non_blocking=True
         )  # [batch_size, num_agents, lookback, feat_dim]
-        batch_roles = batch_roles.to(device)  # [batch_size, num_agents]
-        batch_agent_mask = batch_agent_mask.to(device)  # [batch_size, num_agents]
+        batch_roles = batch_roles.to(device, non_blocking=True)  # [batch_size, num_agents]
+        batch_agent_mask = batch_agent_mask.to(device, non_blocking=True)  # [batch_size, num_agents]
         pairs_list = [
-            pair.to(device) for pair in pairs_list
+            pair.to(device, non_blocking=True) for pair in pairs_list
         ]  # [batch_size, num_pairs, 2]
         labels_list = [
-            label.to(device) for label in labels_list
+            label.to(device, non_blocking=True) for label in labels_list
         ]  # [batch_size, num_pairs]
 
         # Reset gradients
@@ -126,15 +126,15 @@ def evaluate_model(model, loader, criterion, device):
     ) in tqdm(loader, desc="Evaluating", leave=True, ncols=100):
         # Move tensors to device
         batch_trajectories = batch_trajectories.to(
-            device
+            device, non_blocking=True
         )  # [batch_size, num_agents, lookback, feat_dim]
-        batch_roles = batch_roles.to(device)  # [batch_size, num_agents]
-        batch_agent_mask = batch_agent_mask.to(device)  # [batch_size, num_agents]
+        batch_roles = batch_roles.to(device, non_blocking=True)  # [batch_size, num_agents]
+        batch_agent_mask = batch_agent_mask.to(device, non_blocking=True)  # [batch_size, num_agents]
         pairs_list = [
-            pair.to(device) for pair in pairs_list
+            pair.to(device, non_blocking=True) for pair in pairs_list
         ]  # [batch_size, num_pairs, 2]
         labels_list = [
-            label.to(device) for label in labels_list
+            label.to(device, non_blocking=True) for label in labels_list
         ]  # [batch_size, num_pairs]
 
         # Forward pass: return batch_size length list of [num_pairs_i, 1]

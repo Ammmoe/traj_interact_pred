@@ -86,7 +86,6 @@ def main():
         val_split=VAL_SPLIT,
         test_split=TEST_SPLIT,
         lookback=LOOKBACK,
-        device=device,
         max_agents=MAX_AGENTS,
         num_friendly_to_pad=NUM_FRIENDLY_TO_PAD,
         num_unauth_to_pad=NUM_UNAUTH_TO_PAD,

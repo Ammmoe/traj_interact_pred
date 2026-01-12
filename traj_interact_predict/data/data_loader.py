@@ -54,7 +54,6 @@ class DroneInteractionDataset(Dataset):
         traj_df,
         relation_df,
         lookback=50,
-        device="cpu",
         max_agents=6,
         transform=None,
         stride=1,
@@ -64,7 +63,6 @@ class DroneInteractionDataset(Dataset):
         self.traj_df = traj_df.reset_index(drop=True)
         self.relation_df = relation_df.reset_index(drop=True)
         self.lookback = lookback
-        self.device = device
         self.transform = transform
         self.max_agents = max_agents
         self.stride = stride
@@ -210,16 +208,16 @@ class DroneInteractionDataset(Dataset):
 
         # Convert to torch
         trajectories = torch.tensor(
-            trajectories, dtype=torch.float32, device=self.device
+            trajectories, dtype=torch.float32,
         )
         if self.transform:
             trajectories = self.transform(trajectories)
         trajectories = trajectories.transpose(0, 1)  # [lookback, num_agents, 6]
 
-        roles_tensor = torch.tensor(roles, dtype=torch.long, device=self.device)
+        roles_tensor = torch.tensor(roles, dtype=torch.long)
 
         # Mask tensor (1 = valid agent, 0 = padded)
-        agent_mask = torch.tensor(agent_mask, dtype=torch.bool, device=self.device)
+        agent_mask = torch.tensor(agent_mask, dtype=torch.bool)
 
         # Only consider valid agents when building pairs
         # valid_agent_ids = agents  # Original list
@@ -275,8 +273,8 @@ class DroneInteractionDataset(Dataset):
             trajectories,  # [lookback, num_agents, 6]
             roles_tensor,  # [num_agents]
             agent_mask,  # [num_agents]
-            torch.tensor(pairs, dtype=torch.long, device=self.device),  # [num_pairs, 2]
-            torch.tensor(labels, dtype=torch.long, device=self.device),  # [num_pairs]
+            torch.tensor(pairs, dtype=torch.long),  # [num_pairs, 2]
+            torch.tensor(labels, dtype=torch.long),  # [num_pairs]
         )
 
 
@@ -360,7 +358,6 @@ def load_datasets(
     trajectory_csv,
     relation_csv,
     lookback,
-    device,
     val_split=0.15,
     test_split=0.15,
     max_agents=6,
@@ -379,7 +376,6 @@ def load_datasets(
         trajectory_csv (str): Path to trajectory data CSV.
         relation_csv (str): Path to interaction/label CSV.
         lookback (int): Number of timesteps per sample.
-        device (str): "cpu" or "cuda".
         max_agents (int): Max number of agents per sample.
         num_friendly_to_pad (int): How many friendly agents to randomly pad per flight.
         num_unauth_to_pad (int): How many unauthorized agents to randomly pad per flight.
@@ -421,7 +417,6 @@ def load_datasets(
         traj_df[traj_df["flight_id"].isin(train_flights)],
         rel_df,
         lookback=lookback,
-        device=device,
         max_agents=max_agents,
         num_friendly_to_pad=num_friendly_to_pad,
         num_unauth_to_pad=num_unauth_to_pad,
@@ -430,7 +425,6 @@ def load_datasets(
         traj_df[traj_df["flight_id"].isin(val_flights)],
         rel_df,
         lookback=lookback,
-        device=device,
         max_agents=max_agents,
         num_friendly_to_pad=num_friendly_to_pad,
         num_unauth_to_pad=num_unauth_to_pad,
@@ -439,7 +433,6 @@ def load_datasets(
         traj_df[traj_df["flight_id"].isin(test_flights)],
         rel_df,
         lookback=lookback,
-        device=device,
         max_agents=max_agents,
         num_friendly_to_pad=num_friendly_to_pad,
         num_unauth_to_pad=num_unauth_to_pad,
