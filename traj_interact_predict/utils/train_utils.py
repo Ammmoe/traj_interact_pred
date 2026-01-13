@@ -155,10 +155,13 @@ def evaluate_model(model, loader, criterion, device):
 
         # Predictions
         preds = (torch.sigmoid(logits) >= 0.5).long()
+        
+        # Threshold smoothed labels to hard 0/1 for metrics
+        hard_labels = (labels >= 0.5).long()
 
         all_logits.append(logits.cpu())
         all_preds.append(preds.cpu())
-        all_labels.append(labels.cpu())
+        all_labels.append(hard_labels.cpu())
 
     avg_loss = total_loss / total_pairs if total_pairs > 0 else 0.0
 
