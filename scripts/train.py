@@ -80,7 +80,7 @@ def main():
         mp.set_start_method("spawn", force=True)
         
     # DataLoader configuration
-    # Set up num_workers to speed up data loading
+    # Set up num_workers (CPU subprocesses) to speed up data loading
     # Use 0 workers on Windows by default, can be > 0 on Unix-based systems
     NUM_WORKERS = 0 if os.name == "nt" else 4
     PIN_MEMORY = (device.type == "cuda")
