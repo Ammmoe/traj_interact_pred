@@ -89,8 +89,8 @@ def main():
 
     # Load datasets
     train_set, val_set, test_set, scaler = load_datasets(
-        trajectory_csv="data/drone_relations_v8/drone_states.csv",
-        relation_csv="data/drone_relations_v8/drone_relations.csv",
+        trajectory_csv="data/drone_relations_v9/drone_states.csv",
+        relation_csv="data/drone_relations_v9/drone_relations.csv",
         val_split=VAL_SPLIT,
         test_split=TEST_SPLIT,
         lookback=LOOKBACK,

@@ -23,8 +23,8 @@ import pandas as pd
 
 
 # File paths
-STATES_PATH = "data/drone_relations_v8/drone_states.csv"
-RELATIONS_PATH = "data/drone_relations_v8/drone_relations.csv"
+STATES_PATH = "data/drone_relations_v9/drone_states.csv"
+RELATIONS_PATH = "data/drone_relations_v9/drone_relations.csv"
 
 # Load CSV files
 df_states = pd.read_csv(STATES_PATH)
