@@ -1,0 +1,144 @@
+2026-01-02 17:06:19,302 - INFO - 
+================================================================================
+Starting New Experiment
+================================================================================
+2026-01-02 17:06:19,302 - INFO - Experiment started using device: cuda
+2026-01-02 17:06:19,302 - INFO - Experiment folder: experiments/20260102_170618
+2026-01-02 17:06:19,302 - INFO - Total samples (sliding windows): 71506
+2026-01-02 17:06:19,302 - INFO - Train samples: 49953, Val samples: 10240, Test samples: 11313
+2026-01-02 17:06:19,302 - INFO - Batch size: 32, Planned epochs: 50, Learning rate: 0.001
+2026-01-02 17:06:19,431 - INFO - Encoder module (friendly agents): traj_interact_predict.models.bi_gru_encoder
+2026-01-02 17:06:19,431 - INFO - Encoder module (unauthorized agents): traj_interact_predict.models.bi_gru_encoder
+2026-01-02 17:06:19,431 - INFO - Model module: traj_interact_predict.models.dual_encoder_classifier
+2026-01-02 17:06:19,431 - INFO - Model architecture:
+DualEncoderModel(
+  (encoder_friendly): TrajEmbeddingExtractor(
+    (encoder): GRU(3, 64, batch_first=True, bidirectional=True)
+    (enc_to_embed): Linear(in_features=128, out_features=64, bias=True)
+  )
+  (encoder_unauth): TrajEmbeddingExtractor(
+    (encoder): GRU(3, 64, batch_first=True, bidirectional=True)
+    (enc_to_embed): Linear(in_features=128, out_features=64, bias=True)
+  )
+  (classifier): Sequential(
+    (0): Linear(in_features=320, out_features=64, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=64, out_features=1, bias=True)
+  )
+  (layer_norm): LayerNorm((320,), eps=1e-05, elementwise_affine=True)
+  (cross_agent_attn): MultiheadAttention(
+    (out_proj): NonDynamicallyQuantizableLinear(in_features=64, out_features=64, bias=True)
+  )
+  (attn_norm): LayerNorm((64,), eps=1e-05, elementwise_affine=True)
+  (role_embedding): Embedding(2, 64)
+)
+2026-01-02 17:06:19,816 - INFO - Starting training from scratch.
+2026-01-02 18:14:34,622 - INFO - Epoch 1/50 - Train Loss: 0.120663
+2026-01-02 18:28:11,457 - INFO - Epoch 1/50 - Validation Loss: 0.315364
+2026-01-02 18:28:11,545 - INFO - Epoch 1 Evaluation Metrics:
+2026-01-02 18:28:11,545 - INFO - Accuracy: 0.9315, Precision: 0.9144, Recall: 0.8767, F1: 0.8952
+2026-01-02 18:28:11,545 - INFO - Confusion Matrix:
+[[58919  2521]
+ [ 3788 26932]]
+2026-01-02 18:28:11,639 - INFO - Checkpoint saved at epoch 1
+2026-01-02 19:34:51,209 - INFO - Epoch 2/50 - Train Loss: 0.020126
+2026-01-02 19:48:14,762 - INFO - Epoch 2/50 - Validation Loss: 0.441442
+2026-01-02 19:48:14,851 - INFO - Epoch 2 Evaluation Metrics:
+2026-01-02 19:48:14,851 - INFO - Accuracy: 0.9439, Precision: 0.9342, Recall: 0.8948, F1: 0.9141
+2026-01-02 19:48:14,851 - INFO - Confusion Matrix:
+[[59505  1935]
+ [ 3233 27487]]
+2026-01-02 19:48:14,935 - INFO - Checkpoint saved at epoch 2
+2026-01-02 20:54:48,403 - INFO - Epoch 3/50 - Train Loss: 0.007240
+2026-01-02 21:08:09,206 - INFO - Epoch 3/50 - Validation Loss: 0.494383
+2026-01-02 21:08:09,294 - INFO - Epoch 3 Evaluation Metrics:
+2026-01-02 21:08:09,294 - INFO - Accuracy: 0.9451, Precision: 0.9373, Recall: 0.8951, F1: 0.9157
+2026-01-02 21:08:09,294 - INFO - Confusion Matrix:
+[[59602  1838]
+ [ 3223 27497]]
+2026-01-02 21:08:09,380 - INFO - Checkpoint saved at epoch 3
+2026-01-02 22:14:52,881 - INFO - Epoch 4/50 - Train Loss: 0.004369
+2026-01-02 22:28:14,748 - INFO - Epoch 4/50 - Validation Loss: 0.507523
+2026-01-02 22:28:14,834 - INFO - Epoch 4 Evaluation Metrics:
+2026-01-02 22:28:14,834 - INFO - Accuracy: 0.9429, Precision: 0.9417, Recall: 0.8833, F1: 0.9116
+2026-01-02 22:28:14,834 - INFO - Confusion Matrix:
+[[59761  1679]
+ [ 3585 27135]]
+2026-01-02 22:28:14,918 - INFO - Checkpoint saved at epoch 4
+2026-01-02 23:34:44,478 - INFO - Epoch 5/50 - Train Loss: 0.000028
+2026-01-02 23:48:07,026 - INFO - Epoch 5/50 - Validation Loss: 0.550185
+2026-01-02 23:48:07,113 - INFO - Epoch 5 Evaluation Metrics:
+2026-01-02 23:48:07,113 - INFO - Accuracy: 0.9438, Precision: 0.9417, Recall: 0.8861, F1: 0.9131
+2026-01-02 23:48:07,113 - INFO - Confusion Matrix:
+[[59756  1684]
+ [ 3499 27221]]
+2026-01-02 23:48:07,208 - INFO - Checkpoint saved at epoch 5
+2026-01-03 00:54:37,070 - INFO - Epoch 6/50 - Train Loss: 0.009790
+2026-01-03 01:08:00,741 - INFO - Epoch 6/50 - Validation Loss: 0.358000
+2026-01-03 01:08:00,825 - INFO - Epoch 6 Evaluation Metrics:
+2026-01-03 01:08:00,825 - INFO - Accuracy: 0.9359, Precision: 0.9070, Recall: 0.9000, F1: 0.9035
+2026-01-03 01:08:00,825 - INFO - Confusion Matrix:
+[[58606  2834]
+ [ 3073 27647]]
+2026-01-03 01:08:00,932 - INFO - Checkpoint saved at epoch 6
+2026-01-03 02:14:33,133 - INFO - Epoch 7/50 - Train Loss: 0.004365
+2026-01-03 02:27:57,833 - INFO - Epoch 7/50 - Validation Loss: 0.410000
+2026-01-03 02:27:57,919 - INFO - Epoch 7 Evaluation Metrics:
+2026-01-03 02:27:57,919 - INFO - Accuracy: 0.9465, Precision: 0.9329, Recall: 0.9047, F1: 0.9186
+2026-01-03 02:27:57,919 - INFO - Confusion Matrix:
+[[59441  1999]
+ [ 2928 27792]]
+2026-01-03 02:27:58,073 - INFO - Checkpoint saved at epoch 7
+2026-01-03 03:34:55,139 - INFO - Epoch 8/50 - Train Loss: 0.000017
+2026-01-03 03:48:17,907 - INFO - Epoch 8/50 - Validation Loss: 0.540405
+2026-01-03 03:48:17,994 - INFO - Epoch 8 Evaluation Metrics:
+2026-01-03 03:48:17,994 - INFO - Accuracy: 0.9453, Precision: 0.9355, Recall: 0.8979, F1: 0.9163
+2026-01-03 03:48:17,994 - INFO - Confusion Matrix:
+[[59537  1903]
+ [ 3136 27584]]
+2026-01-03 03:48:18,088 - INFO - Checkpoint saved at epoch 8
+2026-01-03 04:55:03,279 - INFO - Epoch 9/50 - Train Loss: 0.000003
+2026-01-03 05:08:25,006 - INFO - Epoch 9/50 - Validation Loss: 0.609532
+2026-01-03 05:08:25,092 - INFO - Epoch 9 Evaluation Metrics:
+2026-01-03 05:08:25,092 - INFO - Accuracy: 0.9447, Precision: 0.9346, Recall: 0.8970, F1: 0.9154
+2026-01-03 05:08:25,092 - INFO - Confusion Matrix:
+[[59511  1929]
+ [ 3163 27557]]
+2026-01-03 05:08:25,227 - INFO - Checkpoint saved at epoch 9
+2026-01-03 06:15:08,385 - INFO - Epoch 10/50 - Train Loss: 0.000001
+2026-01-03 06:28:31,062 - INFO - Epoch 10/50 - Validation Loss: 0.676516
+2026-01-03 06:28:31,148 - INFO - Epoch 10 Evaluation Metrics:
+2026-01-03 06:28:31,148 - INFO - Accuracy: 0.9445, Precision: 0.9355, Recall: 0.8952, F1: 0.9149
+2026-01-03 06:28:31,148 - INFO - Confusion Matrix:
+[[59543  1897]
+ [ 3218 27502]]
+2026-01-03 06:28:31,232 - INFO - Checkpoint saved at epoch 10
+2026-01-03 07:35:09,582 - INFO - Epoch 11/50 - Train Loss: 0.000000
+2026-01-03 07:48:33,826 - INFO - Epoch 11/50 - Validation Loss: 0.741493
+2026-01-03 07:48:33,911 - INFO - Epoch 11 Evaluation Metrics:
+2026-01-03 07:48:33,911 - INFO - Accuracy: 0.9442, Precision: 0.9352, Recall: 0.8947, F1: 0.9145
+2026-01-03 07:48:33,911 - INFO - Confusion Matrix:
+[[59534  1906]
+ [ 3235 27485]]
+2026-01-03 07:48:34,004 - INFO - Checkpoint saved at epoch 11
+2026-01-03 08:55:13,992 - INFO - Epoch 12/50 - Train Loss: 0.000000
+2026-01-03 09:08:36,516 - INFO - Epoch 12/50 - Validation Loss: 0.798855
+2026-01-03 09:08:36,602 - INFO - Epoch 12 Evaluation Metrics:
+2026-01-03 09:08:36,602 - INFO - Accuracy: 0.9441, Precision: 0.9345, Recall: 0.8951, F1: 0.9144
+2026-01-03 09:08:36,602 - INFO - Confusion Matrix:
+[[59513  1927]
+ [ 3222 27498]]
+2026-01-03 09:08:36,685 - INFO - Checkpoint saved at epoch 12
+2026-01-03 09:08:36,685 - INFO - Early stopping triggered after 12 epochs
+2026-01-03 09:08:36,686 - INFO - Total training time: 57736.87 seconds
+2026-01-03 09:08:36,689 - INFO - Loaded best model for evaluation.
+2026-01-03 09:23:23,969 - INFO - Test Loss: 0.548714
+2026-01-03 09:23:23,969 - INFO - Total inference time: 887.28 seconds
+2026-01-03 09:23:23,969 - INFO - Avg inference time per batch: 2.51 seconds
+2026-01-03 09:23:23,969 - INFO - Avg inference time per sequence: 0.08 seconds
+2026-01-03 09:23:24,065 - INFO - Test Evaluation Metrics:
+2026-01-03 09:23:24,065 - INFO - Accuracy: 0.9362, Precision: 0.8927, Recall: 0.9191, F1: 0.9057
+2026-01-03 09:23:24,065 - INFO - Confusion Matrix:
+[[64128  3750]
+ [ 2747 31192]]
+2026-01-03 09:23:24,146 - INFO - Config saved to experiments/20260102_170618/config.json
