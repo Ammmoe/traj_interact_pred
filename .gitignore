@@ -1,5 +1,6 @@
 experiments/*
 !experiments/20260120_130538
+!experiments/20260120_124012
 # data/*.csv
 
 # Ignore evaluation outputs inside experiments
