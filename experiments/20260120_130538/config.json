@@ -18,5 +18,6 @@
     "SET_SEED": false,
     "SEED": null,
     "NUM_FRIENDLY_TO_PAD": 0,
-    "NUM_UNAUTH_TO_PAD": 0
+    "NUM_UNAUTH_TO_PAD": 0,
+    "FEATURE_SET": "pos"
 }

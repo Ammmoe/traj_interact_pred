@@ -48,14 +48,16 @@ class SimAgent:
             (TRAJ_LEN, N_OTHER_AGENTS, N_FEATURES).
         """
         # Get one random sample from the dataset
-        _, _, test_set = load_datasets(
-            trajectory_csv="data/drone_states.csv",
-            relation_csv="data/drone_relations.csv",
-            lookback=60,
-            device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+        _, _, test_set, _ = load_datasets(
+            trajectory_csv="data/drone_relations_v8/drone_states.csv",
+            relation_csv="data/drone_relations_v8/drone_relations.csv",
+            val_split=0.15,
+            test_split=0.15,
+            lookback=120,
             max_agents=6,
             num_friendly_to_pad=0,
             num_unauth_to_pad=0,
+            feature_set="pos",
         )
 
         # Return only one sample for SimAgent call

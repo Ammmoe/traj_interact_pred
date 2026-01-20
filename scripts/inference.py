@@ -36,7 +36,7 @@ def run_inference(
     roles: torch.Tensor,  # shape: [num_agents], values 0=friendly, 1=unauthorized, 2=padded
     pairs: torch.Tensor,  # shape: [num_pairs, 2], agent pair ids (friendly -> unauth)
     agent_mask: torch.Tensor,  # shape: [num_agents], True = valid agent, False = padded
-    experiment_dir: str = "experiments/20251201_180721",  # experiment directory
+    experiment_dir: str = "experiments/20260120_130538",  # experiment directory
 ) -> torch.Tensor:  # shape: [num_pairs]
     """
     Run inference on a single sample.
@@ -85,7 +85,7 @@ def run_inference(
 
     # Forward pass
     with torch.no_grad():
-        logits_list = model(trajectories, roles, pairs, agent_mask)
+        logits_list = model(trajectories, roles, [pairs], agent_mask)
 
     # logits_list is a list of tensors, each [num_pairs_i, 1], concatenate along dim=0
     logits = torch.cat(logits_list, dim=0).squeeze(-1)  # [total_num_pairs]
@@ -105,7 +105,7 @@ def main():
     Entry point for the inference script.
     """
     # Setup logger
-    experiment_dir = "experiments/20260102_170618"
+    experiment_dir = "experiments/20260120_130538"
     logger, _ = get_logger(exp_dir=experiment_dir, log_name="inference.log")
 
     # Log start of new inference session
@@ -122,7 +122,7 @@ def main():
         config = json.load(f)
 
     # Inference config
-    batch_size = 32
+    batch_size = 1
     num_friendly_to_pad = 0
     num_unauth_to_pad = 0
 
@@ -137,8 +137,8 @@ def main():
 
     # Load datasets
     _, _, test_set, _ = load_datasets(
-        trajectory_csv="data/drone_relations_v7/drone_states.csv",
-        relation_csv="data/drone_relations_v7/drone_relations.csv",
+        trajectory_csv="data/drone_relations_v8/drone_states.csv",
+        relation_csv="data/drone_relations_v8/drone_relations.csv",
         val_split=config.get("VAL_SPLIT", 0.15),
         test_split=config.get("TEST_SPLIT", 0.15),
         lookback=config.get("LOOK_BACK"),
@@ -159,7 +159,10 @@ def main():
     for batch in tqdm(test_loader, desc="Test Inference", leave=True, ncols=100):
         # Unpack batch (adapt to your actual output of your loader)
         trajectories, roles, agent_mask, pairs, labels = batch
-
+        
+        pairs = pairs[0]  # single tensor for batch size 1
+        labels = labels[0]  # single tensor for batch size 1
+        
         # Run inference for this sample
         logits = run_inference(
             trajectories,
