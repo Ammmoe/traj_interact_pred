@@ -181,11 +181,9 @@ class SimAgent:
         pairs_list = [(f, u) for f in friendly_idx for u in unauth_idx]
 
         if pairs_list:
-            pairs = torch.tensor(pairs_list, dtype=torch.long).unsqueeze(
-                0
-            )  # (1, num_pairs, 2)
+            pairs = torch.tensor(pairs_list, dtype=torch.long)  # shape: [num_pairs, 2]
         else:
-            pairs = torch.empty((1, 0, 2), dtype=torch.long)
+            pairs = torch.empty((0, 2), dtype=torch.long)
 
         # Run inference
         logits = run_inference(trajectories, roles, pairs, agent_mask)
