@@ -3,6 +3,10 @@ experiments/*
 !experiments/20260102_170618
 # data/*.csv
 
+# Ignore evaluation outputs inside experiments
+experiments/**/calibration_curves/
+experiments/**/confusion_matrices/
+
 # Ignore all __pycache__ directories recursively
 __pycache__/
 
