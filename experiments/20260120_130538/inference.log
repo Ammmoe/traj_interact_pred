@@ -68,3 +68,12 @@ Starting New Inference Session
 2026-01-20 16:48:52,550 - INFO - Friendly agents padded during dataset preparation: 0
 2026-01-20 16:48:52,550 - INFO - Unauthorised agents padded during dataset preparation: 0
 2026-01-20 16:48:53,629 - INFO - Starting inference on test dataset...
+2026-01-20 17:04:21,472 - INFO - Total inference time: 927.84 seconds
+2026-01-20 17:04:21,473 - INFO - Average inference time per batch: 0.0743 seconds
+2026-01-20 17:04:21,474 - INFO - Average inference time per sequence: 0.0743 seconds
+2026-01-20 17:04:21,574 - INFO - Inference Evaluation Metrics:
+2026-01-20 17:04:21,574 - INFO - Accuracy: 0.8916, Precision: 0.8114, Recall: 0.7953, F1: 0.8033
+2026-01-20 17:04:21,574 - INFO - Confusion Matrix:
+[[69633  5343]
+ [ 5915 22982]]
+2026-01-20 17:04:21,869 - INFO - Final Inference Accuracy: 0.8916
