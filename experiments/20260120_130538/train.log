@@ -1,0 +1,229 @@
+2026-01-20 13:05:39,436 - INFO - 
+================================================================================
+Starting New Experiment (Dataset v8: distant drone groups full traj) - hard labels >= 0.5 - pos only
+================================================================================
+2026-01-20 13:05:39,436 - INFO - Experiment started using device: cuda
+2026-01-20 13:05:39,436 - INFO - Experiment folder: experiments/20260120_130538
+2026-01-20 13:05:39,436 - INFO - Total samples (sliding windows): 82005
+2026-01-20 13:05:39,436 - INFO - Train samples: 57013, Val samples: 12496, Test samples: 12496
+2026-01-20 13:05:39,436 - INFO - Past timesteps (lookback): 120
+2026-01-20 13:05:39,436 - INFO - Batch size: 32, Planned epochs: 50, Learning rate: 0.001
+2026-01-20 13:05:39,436 - INFO - Friendly agents padded during dataset preparation: 0
+2026-01-20 13:05:39,436 - INFO - Unauthorised agents padded during dataset preparation: 0
+2026-01-20 13:05:39,572 - INFO - Encoder module (friendly agents): traj_interact_predict.models.bi_gru_encoder
+2026-01-20 13:05:39,572 - INFO - Encoder module (unauthorized agents): traj_interact_predict.models.bi_gru_encoder
+2026-01-20 13:05:39,572 - INFO - Model module: traj_interact_predict.models.dual_encoder_classifier
+2026-01-20 13:05:39,572 - INFO - Model architecture:
+DualEncoderModel(
+  (encoder_friendly): TrajEmbeddingExtractor(
+    (encoder): GRU(3, 64, batch_first=True, bidirectional=True)
+    (enc_to_embed): Linear(in_features=128, out_features=64, bias=True)
+  )
+  (encoder_unauth): TrajEmbeddingExtractor(
+    (encoder): GRU(3, 64, batch_first=True, bidirectional=True)
+    (enc_to_embed): Linear(in_features=128, out_features=64, bias=True)
+  )
+  (classifier): Sequential(
+    (0): Linear(in_features=320, out_features=64, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=64, out_features=1, bias=True)
+  )
+  (layer_norm): LayerNorm((320,), eps=1e-05, elementwise_affine=True)
+  (attention_blocks): ModuleList(
+    (0-2): 3 x AttentionBlock(
+      (cross_agent_attn): MultiheadAttention(
+        (out_proj): NonDynamicallyQuantizableLinear(in_features=64, out_features=64, bias=True)
+      )
+      (attn_norm): LayerNorm((64,), eps=1e-05, elementwise_affine=True)
+    )
+  )
+  (role_embedding): Embedding(2, 64)
+)
+2026-01-20 13:05:39,916 - INFO - Starting training from scratch.
+2026-01-20 13:16:13,793 - INFO - Epoch 1/50 - Train Loss: 0.345960
+2026-01-20 13:18:33,876 - INFO - Epoch 1/50 - Validation Loss: 0.345038
+2026-01-20 13:18:33,892 - INFO - Epoch 1 Evaluation Metrics:
+2026-01-20 13:18:33,892 - INFO - Accuracy: 0.9032, Precision: 0.8325, Recall: 0.8469, F1: 0.8396
+2026-01-20 13:18:33,892 - INFO - Confusion Matrix:
+[[69521  5455]
+ [ 4903 27118]]
+2026-01-20 13:18:34,064 - INFO - Checkpoint saved at epoch 1
+2026-01-20 13:32:10,652 - INFO - 
+================================================================================
+Starting New Experiment
+================================================================================
+2026-01-20 13:32:10,652 - INFO - Experiment started using device: cuda
+2026-01-20 13:32:10,652 - INFO - Experiment folder: experiments/20260120_130538
+2026-01-20 13:32:10,653 - INFO - Total samples (sliding windows): 82005
+2026-01-20 13:32:10,653 - INFO - Train samples: 57013, Val samples: 12496, Test samples: 12496
+2026-01-20 13:32:10,653 - INFO - Past timesteps (lookback): 120
+2026-01-20 13:32:10,653 - INFO - Batch size: 32, Planned epochs: 50, Learning rate: 0.001
+2026-01-20 13:32:10,653 - INFO - Friendly agents padded during dataset preparation: 0
+2026-01-20 13:32:10,653 - INFO - Unauthorised agents padded during dataset preparation: 0
+2026-01-20 13:32:10,772 - INFO - Encoder module (friendly agents): traj_interact_predict.models.bi_gru_encoder
+2026-01-20 13:32:10,772 - INFO - Encoder module (unauthorized agents): traj_interact_predict.models.bi_gru_encoder
+2026-01-20 13:32:10,772 - INFO - Model module: traj_interact_predict.models.dual_encoder_classifier
+2026-01-20 13:32:10,772 - INFO - Model architecture:
+DualEncoderModel(
+  (encoder_friendly): TrajEmbeddingExtractor(
+    (encoder): GRU(3, 64, batch_first=True, bidirectional=True)
+    (enc_to_embed): Linear(in_features=128, out_features=64, bias=True)
+  )
+  (encoder_unauth): TrajEmbeddingExtractor(
+    (encoder): GRU(3, 64, batch_first=True, bidirectional=True)
+    (enc_to_embed): Linear(in_features=128, out_features=64, bias=True)
+  )
+  (classifier): Sequential(
+    (0): Linear(in_features=320, out_features=64, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=64, out_features=1, bias=True)
+  )
+  (layer_norm): LayerNorm((320,), eps=1e-05, elementwise_affine=True)
+  (attention_blocks): ModuleList(
+    (0-2): 3 x AttentionBlock(
+      (cross_agent_attn): MultiheadAttention(
+        (out_proj): NonDynamicallyQuantizableLinear(in_features=64, out_features=64, bias=True)
+      )
+      (attn_norm): LayerNorm((64,), eps=1e-05, elementwise_affine=True)
+    )
+  )
+  (role_embedding): Embedding(2, 64)
+)
+2026-01-20 13:32:11,109 - INFO - Found checkpoint. Attempting to resume training...
+2026-01-20 13:32:11,121 - INFO - Resumed from checkpoint at epoch 1
+2026-01-20 13:39:49,374 - INFO - Epoch 2/50 - Train Loss: 0.268890
+2026-01-20 13:41:43,981 - INFO - Epoch 2/50 - Validation Loss: 0.339169
+2026-01-20 13:41:43,999 - INFO - Epoch 2 Evaluation Metrics:
+2026-01-20 13:41:43,999 - INFO - Accuracy: 0.9101, Precision: 0.8363, Recall: 0.8699, F1: 0.8527
+2026-01-20 13:41:43,999 - INFO - Confusion Matrix:
+[[69522  5454]
+ [ 4167 27854]]
+2026-01-20 13:41:44,242 - INFO - Checkpoint saved at epoch 2
+2026-01-20 13:49:25,640 - INFO - Epoch 3/50 - Train Loss: 0.247898
+2026-01-20 13:51:19,724 - INFO - Epoch 3/50 - Validation Loss: 0.316006
+2026-01-20 13:51:19,743 - INFO - Epoch 3 Evaluation Metrics:
+2026-01-20 13:51:19,743 - INFO - Accuracy: 0.9272, Precision: 0.8691, Recall: 0.8911, F1: 0.8800
+2026-01-20 13:51:19,743 - INFO - Confusion Matrix:
+[[70677  4299]
+ [ 3486 28535]]
+2026-01-20 13:51:19,924 - INFO - Checkpoint saved at epoch 3
+2026-01-20 14:52:06,845 - INFO - 
+================================================================================
+Starting New Experiment
+================================================================================
+2026-01-20 14:52:06,845 - INFO - Experiment started using device: cuda
+2026-01-20 14:52:06,845 - INFO - Experiment folder: experiments/20260120_130538
+2026-01-20 14:52:06,845 - INFO - Total samples (sliding windows): 82005
+2026-01-20 14:52:06,845 - INFO - Train samples: 57013, Val samples: 12496, Test samples: 12496
+2026-01-20 14:52:06,845 - INFO - Past timesteps (lookback): 120
+2026-01-20 14:52:06,845 - INFO - Batch size: 32, Planned epochs: 50, Learning rate: 0.001
+2026-01-20 14:52:06,845 - INFO - Friendly agents padded during dataset preparation: 0
+2026-01-20 14:52:06,845 - INFO - Unauthorised agents padded during dataset preparation: 0
+2026-01-20 14:52:06,963 - INFO - Encoder module (friendly agents): traj_interact_predict.models.bi_gru_encoder
+2026-01-20 14:52:06,963 - INFO - Encoder module (unauthorized agents): traj_interact_predict.models.bi_gru_encoder
+2026-01-20 14:52:06,963 - INFO - Model module: traj_interact_predict.models.dual_encoder_classifier
+2026-01-20 14:52:06,963 - INFO - Model architecture:
+DualEncoderModel(
+  (encoder_friendly): TrajEmbeddingExtractor(
+    (encoder): GRU(3, 64, batch_first=True, bidirectional=True)
+    (enc_to_embed): Linear(in_features=128, out_features=64, bias=True)
+  )
+  (encoder_unauth): TrajEmbeddingExtractor(
+    (encoder): GRU(3, 64, batch_first=True, bidirectional=True)
+    (enc_to_embed): Linear(in_features=128, out_features=64, bias=True)
+  )
+  (classifier): Sequential(
+    (0): Linear(in_features=320, out_features=64, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=64, out_features=1, bias=True)
+  )
+  (layer_norm): LayerNorm((320,), eps=1e-05, elementwise_affine=True)
+  (attention_blocks): ModuleList(
+    (0-2): 3 x AttentionBlock(
+      (cross_agent_attn): MultiheadAttention(
+        (out_proj): NonDynamicallyQuantizableLinear(in_features=64, out_features=64, bias=True)
+      )
+      (attn_norm): LayerNorm((64,), eps=1e-05, elementwise_affine=True)
+    )
+  )
+  (role_embedding): Embedding(2, 64)
+)
+2026-01-20 14:52:07,298 - INFO - Found checkpoint. Attempting to resume training...
+2026-01-20 14:52:07,310 - INFO - Resumed from checkpoint at epoch 3
+2026-01-20 14:59:31,084 - INFO - Epoch 4/50 - Train Loss: 0.232133
+2026-01-20 15:01:21,606 - INFO - Epoch 4/50 - Validation Loss: 0.324238
+2026-01-20 15:01:21,623 - INFO - Epoch 4 Evaluation Metrics:
+2026-01-20 15:01:21,623 - INFO - Accuracy: 0.9299, Precision: 0.8669, Recall: 0.9046, F1: 0.8854
+2026-01-20 15:01:21,623 - INFO - Confusion Matrix:
+[[70529  4447]
+ [ 3055 28966]]
+2026-01-20 15:01:21,788 - INFO - Checkpoint saved at epoch 4
+2026-01-20 15:08:30,768 - INFO - Epoch 5/50 - Train Loss: 0.218281
+2026-01-20 15:10:05,194 - INFO - Epoch 5/50 - Validation Loss: 0.329589
+2026-01-20 15:10:05,209 - INFO - Epoch 5 Evaluation Metrics:
+2026-01-20 15:10:05,210 - INFO - Accuracy: 0.9283, Precision: 0.8838, Recall: 0.8756, F1: 0.8796
+2026-01-20 15:10:05,210 - INFO - Confusion Matrix:
+[[71289  3687]
+ [ 3985 28036]]
+2026-01-20 15:10:05,320 - INFO - Checkpoint saved at epoch 5
+2026-01-20 15:17:16,896 - INFO - Epoch 6/50 - Train Loss: 0.212506
+2026-01-20 15:18:50,978 - INFO - Epoch 6/50 - Validation Loss: 0.327894
+2026-01-20 15:18:50,995 - INFO - Epoch 6 Evaluation Metrics:
+2026-01-20 15:18:50,995 - INFO - Accuracy: 0.9303, Precision: 0.8751, Recall: 0.8948, F1: 0.8848
+2026-01-20 15:18:50,995 - INFO - Confusion Matrix:
+[[70886  4090]
+ [ 3370 28651]]
+2026-01-20 15:18:51,099 - INFO - Checkpoint saved at epoch 6
+2026-01-20 15:25:57,908 - INFO - Epoch 7/50 - Train Loss: 0.209137
+2026-01-20 15:27:32,345 - INFO - Epoch 7/50 - Validation Loss: 0.338336
+2026-01-20 15:27:32,361 - INFO - Epoch 7 Evaluation Metrics:
+2026-01-20 15:27:32,361 - INFO - Accuracy: 0.9230, Precision: 0.8653, Recall: 0.8796, F1: 0.8724
+2026-01-20 15:27:32,361 - INFO - Confusion Matrix:
+[[70593  4383]
+ [ 3855 28166]]
+2026-01-20 15:27:32,523 - INFO - Checkpoint saved at epoch 7
+2026-01-20 15:34:41,123 - INFO - Epoch 8/50 - Train Loss: 0.207200
+2026-01-20 15:36:16,210 - INFO - Epoch 8/50 - Validation Loss: 0.334527
+2026-01-20 15:36:16,225 - INFO - Epoch 8 Evaluation Metrics:
+2026-01-20 15:36:16,225 - INFO - Accuracy: 0.9259, Precision: 0.8631, Recall: 0.8944, F1: 0.8785
+2026-01-20 15:36:16,225 - INFO - Confusion Matrix:
+[[70433  4543]
+ [ 3381 28640]]
+2026-01-20 15:36:16,336 - INFO - Checkpoint saved at epoch 8
+2026-01-20 15:43:25,876 - INFO - Epoch 9/50 - Train Loss: 0.204901
+2026-01-20 15:45:00,644 - INFO - Epoch 9/50 - Validation Loss: 0.358279
+2026-01-20 15:45:00,659 - INFO - Epoch 9 Evaluation Metrics:
+2026-01-20 15:45:00,659 - INFO - Accuracy: 0.9124, Precision: 0.8457, Recall: 0.8650, F1: 0.8552
+2026-01-20 15:45:00,659 - INFO - Confusion Matrix:
+[[69923  5053]
+ [ 4323 27698]]
+2026-01-20 15:45:00,768 - INFO - Checkpoint saved at epoch 9
+2026-01-20 15:52:08,629 - INFO - Epoch 10/50 - Train Loss: 0.204415
+2026-01-20 15:53:42,422 - INFO - Epoch 10/50 - Validation Loss: 0.365416
+2026-01-20 15:53:42,438 - INFO - Epoch 10 Evaluation Metrics:
+2026-01-20 15:53:42,438 - INFO - Accuracy: 0.9115, Precision: 0.8557, Recall: 0.8472, F1: 0.8514
+2026-01-20 15:53:42,438 - INFO - Confusion Matrix:
+[[70403  4573]
+ [ 4893 27128]]
+2026-01-20 15:53:42,548 - INFO - Checkpoint saved at epoch 10
+2026-01-20 16:00:52,256 - INFO - Epoch 11/50 - Train Loss: 0.203181
+2026-01-20 16:02:27,252 - INFO - Epoch 11/50 - Validation Loss: 0.330272
+2026-01-20 16:02:27,268 - INFO - Epoch 11 Evaluation Metrics:
+2026-01-20 16:02:27,268 - INFO - Accuracy: 0.9255, Precision: 0.8596, Recall: 0.8975, F1: 0.8782
+2026-01-20 16:02:27,268 - INFO - Confusion Matrix:
+[[70283  4693]
+ [ 3282 28739]]
+2026-01-20 16:02:27,368 - INFO - Checkpoint saved at epoch 11
+2026-01-20 16:02:27,368 - INFO - Early stopping triggered after 11 epochs
+2026-01-20 16:02:27,370 - INFO - Total training time: 4220.07 seconds
+2026-01-20 16:02:27,373 - INFO - Loaded best model for evaluation.
+2026-01-20 16:04:18,319 - INFO - Test Loss: 0.399511
+2026-01-20 16:04:18,319 - INFO - Total inference time: 110.95 seconds
+2026-01-20 16:04:18,319 - INFO - Avg inference time per batch: 0.28 seconds
+2026-01-20 16:04:18,319 - INFO - Avg inference time per sequence: 0.01 seconds
+2026-01-20 16:04:18,335 - INFO - Test Evaluation Metrics:
+2026-01-20 16:04:18,335 - INFO - Accuracy: 0.8918, Precision: 0.8117, Recall: 0.7954, F1: 0.8035
+2026-01-20 16:04:18,335 - INFO - Confusion Matrix:
+[[69643  5333]
+ [ 5911 22986]]
+2026-01-20 16:04:18,416 - INFO - Config saved to experiments/20260120_130538/config.json
