@@ -29,6 +29,11 @@ from traj_interact_predict.utils.train_utils import (
 )
 from traj_interact_predict.utils.logger import get_logger
 import torch.multiprocessing as mp
+import matplotlib
+
+matplotlib.use(
+    "Agg"
+)  # Use non-interactive backend for matplotlib to avoid worker issues
 
 
 def main():
@@ -64,7 +69,7 @@ def main():
     NUM_FRIENDLY_TO_PAD = 0
     NUM_UNAUTH_TO_PAD = 0
     FEATURE_SET = "pos_vel"  # "pos" or "pos_vel"
-    
+
     if FEATURE_SET == "pos":
         input_feat_dim = 3
     elif FEATURE_SET == "pos_vel":
@@ -86,13 +91,13 @@ def main():
     # Set multiprocessing start method to spawn if using CUDA to avoid fork error
     if device.type == "cuda":
         mp.set_start_method("spawn", force=True)
-        
+
     # DataLoader configuration
     # Set up num_workers (CPU subprocesses) to speed up data loading
     # Use 0 workers on Windows by default, can be > 0 on Unix-based systems
     NUM_WORKERS = 0 if os.name == "nt" else 4
-    PIN_MEMORY = (device.type == "cuda")
-    PERSISTENT_WORKERS = (NUM_WORKERS > 0)
+    PIN_MEMORY = device.type == "cuda"
+    PERSISTENT_WORKERS = NUM_WORKERS > 0
     PREFETCH_FACTOR = 2 if NUM_WORKERS > 0 else None
 
     # Load datasets
