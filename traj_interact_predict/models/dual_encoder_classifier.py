@@ -12,6 +12,45 @@ import torch
 import torch.nn as nn
 
 
+class AttentionBlock(nn.Module):
+    """
+    A self-attention block with residual connection and layer normalization.
+
+    Applies multi-head self-attention across agents’ embeddings, followed by
+    layer normalization on the residual sum of input and attention output.
+
+    Args:
+        embedding_dim (int): Dimensionality of input embeddings.
+        num_heads (int): Number of attention heads in the multi-head attention.
+
+    """
+
+    def __init__(self, embedding_dim, num_heads):
+        super().__init__()
+        self.cross_agent_attn = nn.MultiheadAttention(
+            embed_dim=embedding_dim, num_heads=num_heads, batch_first=True
+        )
+        self.attn_norm = nn.LayerNorm(embedding_dim)
+
+    def forward(self, x, key_padding_mask=None):
+        """
+        Forward pass of the attention block.
+
+        Args:
+            x (Tensor): Input embeddings of shape [batch_size, seq_len, embedding_dim].
+            key_padding_mask (Tensor, optional): Boolean mask for padded elements
+                with shape [batch_size, seq_len], where True values are masked out.
+
+        Returns:
+            Tensor: Output embeddings of shape [batch_size, seq_len, embedding_dim],
+            after applying self-attention and layer normalization with residual connection.
+        """
+        attn_out, _ = self.cross_agent_attn(
+            query=x, key=x, value=x, key_padding_mask=key_padding_mask
+        )
+        return self.attn_norm(x + attn_out)
+
+
 class DualEncoderModel(nn.Module):
     """
     Dual-encoder model for binary relation classification between agent pairs.
@@ -26,7 +65,9 @@ class DualEncoderModel(nn.Module):
         embedding_dim (int): Dimension of the agent embeddings.
     """
 
-    def __init__(self, encoder_friendly, encoder_unauth, embedding_dim):
+    def __init__(
+        self, encoder_friendly, encoder_unauth, embedding_dim, num_attention_layers=3
+    ):
         super().__init__()
 
         self.encoder_friendly = encoder_friendly  # friendly encoder
@@ -40,11 +81,12 @@ class DualEncoderModel(nn.Module):
 
         self.layer_norm = nn.LayerNorm(embedding_dim * 5)
 
-        self.cross_agent_attn = nn.MultiheadAttention(
-            embed_dim=embedding_dim, num_heads=4, batch_first=True
+        self.attention_blocks = nn.ModuleList(
+            [
+                AttentionBlock(embedding_dim, num_heads=4)
+                for _ in range(num_attention_layers)
+            ]
         )
-
-        self.attn_norm = nn.LayerNorm(embedding_dim)
 
         self.role_embedding = nn.Embedding(
             num_embeddings=2,  # 0=friendly, 1=unauthorized
@@ -79,9 +121,7 @@ class DualEncoderModel(nn.Module):
         agent_mask_flat = batch_agent_mask.reshape(batch_size * max_agents)
 
         # Encode all agents using dual encoders
-        embeddings = torch.zeros(
-            batch_size * max_agents, embed_dim, device=device
-        )
+        embeddings = torch.zeros(batch_size * max_agents, embed_dim, device=device)
 
         friendly_mask = (roles_flat == 0) & agent_mask_flat
         unauth_mask = (roles_flat == 1) & agent_mask_flat
@@ -105,14 +145,10 @@ class DualEncoderModel(nn.Module):
         )  # [batch_size, max_agents, embed_dim]
 
         # Cross-agent self attention layer (batched)
-        attn_out, _ = self.cross_agent_attn(
-            query=agent_embeddings,
-            key=agent_embeddings,
-            value=agent_embeddings,
-            key_padding_mask=~batch_agent_mask,  # Mask padded agents
-        )  # [batch_size, max_agents, embed_dim]
-
-        agent_embeddings = self.attn_norm(agent_embeddings + attn_out)
+        for attention_block in self.attention_blocks:
+            agent_embeddings = attention_block(
+                agent_embeddings, key_padding_mask=~batch_agent_mask
+            )  # [batch_size, max_agents, embed_dim]
 
         # Flatten all pairs across the batch for classification
         batch_ids = []
