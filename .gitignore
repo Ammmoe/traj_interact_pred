@@ -1,4 +1,5 @@
 experiments/*
+experiments/**/inference.log
 !experiments/20260120_130538
 !experiments/20260120_124012
 # data/*.csv
