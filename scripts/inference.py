@@ -26,7 +26,7 @@ from torch.utils.data import DataLoader
 from traj_interact_predict.models.bi_gru_encoder import TrajEmbeddingExtractor
 from traj_interact_predict.models.dual_encoder_classifier import DualEncoderModel
 from traj_interact_predict.utils.logger import get_logger
-from traj_interact_predict.data.data_loader import load_datasets
+from traj_interact_predict.data.data_loader import custom_collate, load_datasets
 from traj_interact_predict.utils.train_utils import calculate_evaluation_scores
 
 
@@ -74,7 +74,7 @@ def run_inference(
 
     # Load weights
     model_path = os.path.join(experiment_dir, "best_model.pt")
-    model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
+    model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
     # Move inputs to device
@@ -105,7 +105,7 @@ def main():
     Entry point for the inference script.
     """
     # Setup logger
-    experiment_dir = "experiments/20251201_180721"
+    experiment_dir = "experiments/20260102_170618"
     logger, _ = get_logger(exp_dir=experiment_dir, log_name="inference.log")
 
     # Log start of new inference session
@@ -136,19 +136,19 @@ def main():
     )
 
     # Load datasets
-    _, _, test_set = load_datasets(
-        trajectory_csv="data/drone_states.csv",
-        relation_csv="data/drone_relations.csv",
-        val_split=0.15,
-        test_split=0.15,
+    _, _, test_set, _ = load_datasets(
+        trajectory_csv="data/drone_relations_v7/drone_states.csv",
+        relation_csv="data/drone_relations_v7/drone_relations.csv",
+        val_split=config.get("VAL_SPLIT", 0.15),
+        test_split=config.get("TEST_SPLIT", 0.15),
         lookback=config.get("LOOK_BACK"),
-        device=device,
         max_agents=config.get("MAX_AGENTS"),
         num_friendly_to_pad=num_friendly_to_pad,
         num_unauth_to_pad=num_unauth_to_pad,
+        feature_set=config.get("FEATURE_SET")
     )
 
-    test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False, collate_fn=custom_collate)
 
     logger.info("Starting inference on test dataset...")
 
@@ -175,6 +175,9 @@ def main():
 
         # labels shape is [1, num_pairs], squeeze it to [num_pairs]
         labels = labels.squeeze(0)  # remove batch dim
+                
+        # Threshold smoothed labels to hard 0/1 for metrics
+        labels = (labels >= 0.5).long()
 
         all_logits.append(probs.cpu())
         all_preds.append(preds.cpu())

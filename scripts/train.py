@@ -63,10 +63,18 @@ def main():
     LOOKBACK = 120
     NUM_FRIENDLY_TO_PAD = 0
     NUM_UNAUTH_TO_PAD = 0
+    FEATURE_SET = "pos_vel"  # "pos" or "pos_vel"
+    
+    if FEATURE_SET == "pos":
+        input_feat_dim = 3
+    elif FEATURE_SET == "pos_vel":
+        input_feat_dim = 6
+    else:
+        raise ValueError(f"Unknown feature_set: {FEATURE_SET}")
 
     # Model parameters
     encoder_params = {
-        "input_size": 6,  # feature dimension
+        "input_size": input_feat_dim,  # feature dimension
         "enc_hidden_size": 64,
         "embedding_dim": 64,
         "num_layers": 1,
@@ -97,6 +105,7 @@ def main():
         max_agents=MAX_AGENTS,
         num_friendly_to_pad=NUM_FRIENDLY_TO_PAD,
         num_unauth_to_pad=NUM_UNAUTH_TO_PAD,
+        feature_set=FEATURE_SET,
     )
 
     logger.info("\n" + "=" * 80 + "\nStarting New Experiment\n" + "=" * 80)
@@ -343,6 +352,7 @@ def main():
         "SEED": SEED,
         "NUM_FRIENDLY_TO_PAD": NUM_FRIENDLY_TO_PAD,
         "NUM_UNAUTH_TO_PAD": NUM_UNAUTH_TO_PAD,
+        "FEATURE_SET": FEATURE_SET,
     }
 
     os.makedirs(exp_dir, exist_ok=True)

@@ -59,6 +59,7 @@ class DroneInteractionDataset(Dataset):
         stride=1,
         num_friendly_to_pad=0,
         num_unauth_to_pad=0,
+        feature_set="pos_vel", # "pos" or "pos_vel"
     ):
         self.traj_df = traj_df.reset_index(drop=True)
         self.relation_df = relation_df.reset_index(drop=True)
@@ -80,6 +81,8 @@ class DroneInteractionDataset(Dataset):
 
         # Down sampling rate
         self.downsample_rate = 3
+        
+        self.feature_set = feature_set
 
         flights = self.traj_df["flight_id"].unique()
         for fid in flights:
@@ -153,16 +156,30 @@ class DroneInteractionDataset(Dataset):
 
             # Build trajectory for this agent
             agent_traj = []
-            last_row = np.zeros(
-                6, dtype=np.float32
-            )  # pos_x, pos_y, pos_z, vel_x, vel_y, vel_z
+            if self.feature_set == "pos":
+                last_row = np.zeros(
+                    3, dtype=np.float32
+                )  # pos_x, pos_y, pos_z
+            elif self.feature_set == "pos_vel":
+                last_row = np.zeros(
+                    6, dtype=np.float32
+                )  # pos_x, pos_y, pos_z, vel_x, vel_y, vel_z
+            else:
+                raise ValueError(f"Unknown feature_set: {self.feature_set}")
 
             for t in sliding_window_ts:
+                row = None
                 if t in agent_rows.index:
-                    row = agent_rows.loc[
-                        t, ["pos_x", "pos_y", "pos_z", "vel_x", "vel_y", "vel_z"]
-                    ].values.astype(np.float32)
-                    last_row = row
+                    if self.feature_set == "pos":
+                        row = agent_rows.loc[
+                            t, ["pos_x", "pos_y", "pos_z"]
+                        ].values.astype(np.float32)
+                    elif self.feature_set == "pos_vel":
+                        row = agent_rows.loc[
+                            t, ["pos_x", "pos_y", "pos_z", "vel_x", "vel_y", "vel_z"]
+                        ].values.astype(np.float32)
+                    if row is not None:
+                        last_row = row
                 agent_traj.append(last_row.copy())  # copy to avoid references
 
             agent_traj = np.stack(agent_traj, axis=0)  # [lookback, 6]
@@ -348,6 +365,7 @@ def load_datasets(
     max_agents=6,
     num_friendly_to_pad=0,
     num_unauth_to_pad=0,
+    feature_set="pos_vel", # "pos" or "pos_vel"
 ):
     """
         Load the DroneInteractionDataset and split it into train/val/test subsets.
@@ -389,7 +407,13 @@ def load_datasets(
     # Step 3: Fit scaler on training flights only
     train_df = traj_df[traj_df["flight_id"].isin(train_flights)]
 
-    feature_cols = ["pos_x", "pos_y", "pos_z", "vel_x", "vel_y", "vel_z"]
+    # Define features to scale
+    if feature_set == "pos":
+        feature_cols = ["pos_x", "pos_y", "pos_z"]
+    elif feature_set == "pos_vel":
+        feature_cols = ["pos_x", "pos_y", "pos_z", "vel_x", "vel_y", "vel_z"]
+    else:
+        raise ValueError(f"Unknown feature_set: {feature_set}")
 
     scaler = StandardScaler()
     scaler.fit(train_df[feature_cols])
@@ -405,6 +429,7 @@ def load_datasets(
         max_agents=max_agents,
         num_friendly_to_pad=num_friendly_to_pad,
         num_unauth_to_pad=num_unauth_to_pad,
+        feature_set=feature_set,
     )
     val_set = DroneInteractionDataset(
         traj_df[traj_df["flight_id"].isin(val_flights)],
@@ -413,6 +438,7 @@ def load_datasets(
         max_agents=max_agents,
         num_friendly_to_pad=num_friendly_to_pad,
         num_unauth_to_pad=num_unauth_to_pad,
+        feature_set=feature_set,
     )
     test_set = DroneInteractionDataset(
         traj_df[traj_df["flight_id"].isin(test_flights)],
@@ -421,6 +447,7 @@ def load_datasets(
         max_agents=max_agents,
         num_friendly_to_pad=num_friendly_to_pad,
         num_unauth_to_pad=num_unauth_to_pad,
+        feature_set=feature_set,
     )
 
     return train_set, val_set, test_set, scaler

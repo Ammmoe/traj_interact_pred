@@ -16,5 +16,6 @@
     "BATCH_SIZE": 16,
     "LEARNING_RATE": 0.001,
     "SET_SEED": false,
-    "SEED": null
+    "SEED": null,
+    "FEATURE_SET": "pos_vel"
 }
