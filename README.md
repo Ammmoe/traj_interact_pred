@@ -239,7 +239,7 @@ The simulation agent runs a trajectory tracking and interaction prediction loop 
 ### ▶️ Command to Run
 
 ```python
-python -m simulation.sim_agent
+python -m traj_interact_predict.simulation.sim_agent
 ```
 
 ### 📝 What It Does
