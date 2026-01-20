@@ -208,7 +208,8 @@ class DroneInteractionDataset(Dataset):
 
         # Convert to torch
         trajectories = torch.tensor(
-            trajectories, dtype=torch.float32,
+            trajectories,
+            dtype=torch.float32,
         )
         if self.transform:
             trajectories = self.transform(trajectories)
@@ -253,105 +254,89 @@ class DroneInteractionDataset(Dataset):
 
         flight_relations = self.relation_df[self.relation_df["flight_id"] == flight_id]
 
+        # Total timesteps after downsampling (120 -> 40)
+        total_timesteps = self.lookback // self.downsample_rate  # should be 40
+
+        # Optional smoothing factor (prevents exact 0 or 1)
+        eps = 0.05  # set to 0.0 to disable smoothing
+
         for src in friendly_agents:
             for tgt in unauth_agents:
                 pairs.append([src, tgt])
+
                 src_id = idx2agent_id[src]
                 tgt_id = idx2agent_id[tgt]
-                mask = (flight_relations["drone_id"] == src_id) & (
-                    flight_relations["target_id"] == tgt_id
+
+                # All relations for this pair
+                pair_relations = flight_relations[
+                    (flight_relations["drone_id"] == src_id)
+                    & (flight_relations["target_id"] == tgt_id)
+                ]
+
+                if pair_relations.empty:
+                    labels.append(eps)
+                    continue
+
+                # Count original following timesteps (out of 120)
+                following_count_full = (
+                    pair_relations["relationship"] == "following"
+                ).sum()
+
+                # Convert to downsampled timesteps
+                following_count_downsampled = (
+                    following_count_full / self.downsample_rate
                 )
-                labels.append(
-                    int(
-                        (flight_relations[mask]["relationship"] == "following").any()
-                        if mask.any()
-                        else 0
-                    )
-                )
+
+                # Soft label: proportion of following timesteps
+                raw_label = following_count_downsampled / total_timesteps
+
+                # Clamp for numerical safety
+                raw_label = max(0.0, min(1.0, raw_label))
+
+                # Apply label smoothing
+                label = raw_label * (1 - 2 * eps) + eps
+
+                labels.append(label)
 
         return (
             trajectories,  # [lookback, num_agents, 6]
             roles_tensor,  # [num_agents]
             agent_mask,  # [num_agents]
             torch.tensor(pairs, dtype=torch.long),  # [num_pairs, 2]
-            torch.tensor(labels, dtype=torch.long),  # [num_pairs]
+            torch.tensor(labels, dtype=torch.float32),  # [num_pairs]
         )
 
 
-def collate_fn(batch):
+def custom_collate(batch):
     """
-    Custom collate function for DroneInteractionDataset.
+    Custom collate function for batching DroneInteractionDataset samples with fixed agent count.
 
-    This function takes a list of samples produced by the dataset, where each
-    sample consists of:
-        - trajectories: Tensor [lookback, num_agents, num_features]
-        - roles:        Tensor [num_agents]
-        - agent_mask:   Tensor [num_agents]
-        - pairs:        Tensor [num_pairs, 2]
-        - labels:       Tensor [num_pairs]
-
-    Because different samples may contain different numbers of agents,
-    this function pads the agent dimension of:
-        - trajectories
-        - roles
-        - agent_mask
-
-    Padding ensures that all samples in the batch have the same number of agents
-    (max_agents across the batch). The padded agents are filled with zeros and
-    masked out via the agent_mask.
-
-    The pair lists and label lists are **not padded** because each sample
-    may contain a different number of interaction pairs. They are therefore
-    returned as Python lists of tensors with varying shapes.
+    Args:
+        batch (list): A list of samples, where each sample is a tuple containing:
+            - trajectories: Tensor of shape [lookback, num_agents, num_features]
+            - roles: Tensor of shape [num_agents]
+            - agent_mask: Tensor of shape [num_agents]
+            - pairs: Tensor of shape [num_pairs, 2] (variable per sample)
+            - labels: Tensor of shape [num_pairs] (variable per sample)
 
     Returns:
-        batch_trajectories: Tensor
-            Shape [batch_size, lookback, max_agents, num_features]
-
-        batch_roles: Tensor
-            Shape [batch_size, max_agents]
-
-        batch_agent_mask: Tensor
-            Shape [batch_size, max_agents]
-
-        pairs_list: list of length batch_size
-            Each element is a Tensor [num_pairs, 2]
-
-        labels_list: list of length batch_size
-            Each element is a Tensor [num_pairs]
+        tuple: Batched tensors and lists:
+            - batch_trajectories: Tensor of shape [batch_size, lookback, num_agents, num_features]
+            - batch_roles: Tensor of shape [batch_size, num_agents]
+            - batch_agent_mask: Tensor of shape [batch_size, num_agents]
+            - pairs_list: list of length batch_size, each element a Tensor of shape [num_pairs_i, 2]
+            - labels_list: list of length batch_size, each element a Tensor of shape [num_pairs_i]
     """
-    lookback = batch[0][0].shape[0]
-    max_agents = max(item[0].shape[1] for item in batch)
-    num_features = batch[0][0].shape[2]
+    trajectories = torch.stack(
+        [item[0] for item in batch], dim=0
+    )  # [batch, lookback, num_agents, 6]
+    roles = torch.stack([item[1] for item in batch], dim=0)  # [batch, num_agents]
+    agent_mask = torch.stack([item[2] for item in batch], dim=0)  # [batch, num_agents]
 
-    traj_list, roles_list, agent_mask_list, pairs_list, labels_list = [], [], [], [], []
+    pairs = [item[3] for item in batch]  # list of [num_pairs_i, 2] tensors
+    labels = [item[4] for item in batch]  # list of [num_pairs_i] tensors
 
-    for trajectories, roles, agent_mask, pairs, labels in batch:
-        num_agents = trajectories.shape[1]
-        pad_size = max_agents - num_agents
-
-        # Pad trajectories along agent dimension
-        if pad_size > 0:
-            pad_traj = torch.zeros(lookback, pad_size, num_features)
-            trajectories = torch.cat([trajectories, pad_traj], dim=1)
-            roles = torch.cat([roles, torch.zeros(pad_size, dtype=roles.dtype)])
-            agent_mask = torch.cat(
-                [agent_mask, torch.zeros(pad_size, dtype=agent_mask.dtype)]
-            )
-
-        traj_list.append(trajectories)
-        roles_list.append(roles)
-        agent_mask_list.append(agent_mask)
-        pairs_list.append(pairs)
-        labels_list.append(labels)
-
-    batch_trajectories = torch.stack(
-        traj_list, dim=0
-    )  # [batch_size, lookback, max_agents, num_features]
-    batch_roles = torch.stack(roles_list, dim=0)  # [batch_size, max_agents]
-    batch_agent_mask = torch.stack(agent_mask_list, dim=0)  # [batch_size, max_agents]
-
-    return batch_trajectories, batch_roles, batch_agent_mask, pairs_list, labels_list
+    return trajectories, roles, agent_mask, pairs, labels
 
 
 def load_datasets(
@@ -365,25 +350,25 @@ def load_datasets(
     num_unauth_to_pad=0,
 ):
     """
-    Load the DroneInteractionDataset and split it into train/val/test subsets.
+        Load the DroneInteractionDataset and split it into train/val/test subsets.
 
-    Splits are computed by **deterministic contiguous slicing** (no shuffling).
-    Useful when the dataset is already time-ordered.
+        Splits are computed by **deterministic contiguous slicing** (no shuffling).
+        Useful when the dataset is already time-ordered.
 
-    Args:
-        val_split (float): Fraction of samples for validation.
-        test_split (float): Fraction of samples for testing.
-        trajectory_csv (str): Path to trajectory data CSV.
-        relation_csv (str): Path to interaction/label CSV.
-        lookback (int): Number of timesteps per sample.
-        max_agents (int): Max number of agents per sample.
-        num_friendly_to_pad (int): How many friendly agents to randomly pad per flight.
-        num_unauth_to_pad (int): How many unauthorized agents to randomly pad per flight.
+        Args:
+            val_split (float): Fraction of samples for validation.
+            test_split (float): Fraction of samples for testing.
+            trajectory_csv (str): Path to trajectory data CSV.
+            relation_csv (str): Path to interaction/label CSV.
+            lookback (int): Number of timesteps per sample.
+            max_agents (int): Max number of agents per sample.
+            num_friendly_to_pad (int): How many friendly agents to randomly pad per flight.
+            num_unauth_to_pad (int): How many unauthorized agents to randomly pad per flight.
 
-    Returns:
-        (train_set, val_set, test_set, scaler): Dataset subsets as torch.utils.data.Subset.
-    max_agents=6,
-):
+        Returns:
+            (train_set, val_set, test_set, scaler): Dataset subsets as torch.utils.data.Subset.
+        max_agents=6,
+    ):
     """
     # Step 1: Load raw data
     traj_df = pd.read_csv(trajectory_csv)

@@ -19,7 +19,7 @@ import json
 import joblib
 import torch
 from torch.utils.data import DataLoader
-from traj_interact_predict.data.data_loader import load_datasets
+from traj_interact_predict.data.data_loader import load_datasets, custom_collate
 from traj_interact_predict.models.bi_gru_encoder import TrajEmbeddingExtractor
 from traj_interact_predict.models.dual_encoder_classifier import DualEncoderModel
 from traj_interact_predict.utils.train_utils import (
@@ -89,8 +89,8 @@ def main():
 
     # Load datasets
     train_set, val_set, test_set, scaler = load_datasets(
-        trajectory_csv="data/drone_states.csv",
-        relation_csv="data/drone_relations.csv",
+        trajectory_csv="data/drone_relations_v9/drone_states.csv",
+        relation_csv="data/drone_relations_v9/drone_relations.csv",
         val_split=VAL_SPLIT,
         test_split=TEST_SPLIT,
         lookback=LOOKBACK,
@@ -128,6 +128,7 @@ def main():
         train_set,
         batch_size=BATCH_SIZE,
         shuffle=True,
+        collate_fn=custom_collate,
         num_workers=NUM_WORKERS,
         pin_memory=PIN_MEMORY,
         persistent_workers=PERSISTENT_WORKERS,
@@ -137,6 +138,7 @@ def main():
         val_set,
         batch_size=BATCH_SIZE,
         shuffle=False,
+        collate_fn=custom_collate,
         num_workers=NUM_WORKERS,
         pin_memory=PIN_MEMORY,
         persistent_workers=PERSISTENT_WORKERS,
@@ -146,6 +148,7 @@ def main():
         test_set,
         batch_size=BATCH_SIZE,
         shuffle=False,
+        collate_fn=custom_collate,
         num_workers=NUM_WORKERS,
         pin_memory=PIN_MEMORY,
         persistent_workers=PERSISTENT_WORKERS,
