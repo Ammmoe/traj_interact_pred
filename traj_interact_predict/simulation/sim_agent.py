@@ -6,6 +6,7 @@ agents based on trajectory data and agent roles.
 from typing import cast, Tuple
 import numpy as np
 import torch
+import joblib
 from traj_interact_predict.data.data_loader import load_datasets
 from traj_interact_predict.utils.sim_agent_utils import filter_my_id
 from scripts.inference import run_inference
@@ -32,10 +33,29 @@ class SimAgent:
         other_agents_traj (np.ndarray): Trajectories of other agents.
     """
 
-    def __init__(self, my_id):
+    def __init__(self, my_id, scaler_path="experiments/20260120_130538/scaler.pkl"):
         """Initialize SimAgent with its own ID."""
         # Save my_id and other_agents_ids
         self.my_id = my_id
+        self.scaler = joblib.load(scaler_path)
+
+    def scale_trajectories(self, trajectories):
+        """
+        Scales the trajectories using the loaded scaler.
+
+        Args:
+            trajectories (np.ndarray): Trajectories to be scaled, shape (lookback, num_agents, features).
+
+        Returns:
+            np.ndarray: Scaled trajectories with the same shape.
+        """
+        lookback, num_agents, num_features = trajectories.shape
+        # Reshape to 2D for scaling
+        reshaped_traj = trajectories.reshape(-1, num_features)
+        scaled_reshaped_traj = self.scaler.transform(reshaped_traj)
+        # Reshape back to original shape
+        scaled_traj = scaled_reshaped_traj.reshape(lookback, num_agents, num_features)
+        return scaled_traj
 
     def sim_traj_tracker(self):
         """
@@ -140,7 +160,7 @@ class SimAgent:
 
         return agent_role, other_agents_traj.cpu().numpy()
 
-    def interact_predict(self, agent_role, other_agents_traj):
+    def interact_predict(self, agent_role, other_agents_traj, already_scaled=False):
         """
         Predicts interaction pairs between friendly and unauthorized agents
         based on their trajectories and roles.
@@ -149,13 +169,18 @@ class SimAgent:
             agent_role (dict): Mapping of agent IDs to role strings.
             other_agents_traj (np.ndarray): Trajectories of other agents,
                 shape (LOOKBACK, N_OTHER_AGENTS, N_FEATURES).
+            already_scaled (bool): Whether the trajectories are already scaled.
 
         Returns:
             interact_pair (list): List of tuples
-                (friendly_agent_id, unauthorized_agent_id, follow_flag).
+                (friendly_agent_id, unauthorized_agent_id, follow_flag or probability).
         """
         # Extract agent IDs in the order that aligns with trajectories
         other_agents_ids = list(agent_role.keys())
+
+        # Scale trajectories before converting to tensor
+        if not already_scaled:
+            other_agents_traj = self.scale_trajectories(other_agents_traj)
 
         # Convert trajectory shape and data type
         trajectories = torch.tensor(other_agents_traj, dtype=torch.float32).unsqueeze(
@@ -190,14 +215,18 @@ class SimAgent:
 
         # Apply sigmoid and threshold
         probs = torch.sigmoid(logits)
-        preds = (probs >= 0.5).long()
+
+        # Threshold at 0.5 to get binary predictions
+        # preds = (probs >= 0.5).long()
 
         # Map pairs back to actual agent IDs
         interact_pair = []
         for i, (friendly_idx, unauth_idx) in enumerate(pairs_list):
             friendly_id = other_agents_ids[friendly_idx]
             unauth_id = other_agents_ids[unauth_idx]
-            follow_flag = preds[i].item()
+            follow_flag = probs[
+                i
+            ].item()  # change to preds[i].item() for binary prediction
             interact_pair.append((friendly_id, unauth_id, follow_flag))
 
         return interact_pair
@@ -209,7 +238,9 @@ def main():
     """
     my_agent = SimAgent(my_id=0)
     agent_role, other_agents_traj = my_agent.sim_traj_tracker()
-    interact_pair = my_agent.interact_predict(agent_role, other_agents_traj)
+    interact_pair = my_agent.interact_predict(
+        agent_role, other_agents_traj, already_scaled=True
+    )
 
     print("\nPredicted interaction pairs (friendly_id, unauthorized_id, follow_flag):")
     if interact_pair:
