@@ -77,9 +77,8 @@ The final forward and backward hidden states are concatenated and projected into
 It is recommended to use a conda environment.
 
 ```bash
-# Create and activate the environment
-conda create -n traj_interact python=3.10
-conda activate traj_interact
+# Activate the virtual environment you are using
+conda activate your_env
 
 # Install dependencies
 pip install -r requirements.txt
