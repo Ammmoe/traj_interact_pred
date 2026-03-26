@@ -4,84 +4,52 @@ This repository provides a **training pipeline** for classifying drone interacti
 
 ---
 
-## ⚙️ Model Architecture
+## Model Architecture
 
-### 🔷 Attention-Enhanced Dual-Encoder Classifier (Full Model Overview)
+### Attention-Enhanced Dual-Encoder Classifier
 
 Two Bi-GRU encoders independently generate embeddings for each agent type.  
 A Cross-Agent Self-Attention Transformer captures interactions between agent embeddings, followed by an MLP classifier to predict interaction types.
 
-> **Figure 1. Attention-Enhanced Dual-Encoder Classifier**  
+> **Figure 1: Attention-Enhanced Dual-Encoder Classifier**  
 > *(High-level overview of the full model)*
 
 ![Dual Encoder Architecture](Dual-Encoder-Classifier.png)
 
 ---
 
-### 🔷 Bi-GRU Encoder (Per-Agent Trajectory Encoder)
-
-Each encoder processes a sequence of agent states (e.g., position, velocity) using a **Bi-directional GRU**.  
-The final forward and backward hidden states are concatenated and projected into a fixed-size embedding vector.
-
-> **Figure 2. Bi-GRU Encoder Architecture**  
-> *(Structure of each encoder inside the dual-encoder model)*
-
-![Bi-GRU Encoder](Bi-GRU-Encoder.png)
-
----
-
-## 📂 Directory Structure
+## Environment Setup (ROS2 + PyTorch via venv)
 
 ```bash
-.
-├── scripts/
-│   └── train.py                       # Main training script
-│   └── inference.py                   # Inference script
-│
-├── traj_interact_predict/
-│   ├── __init__.py
-│   ├── data/
-│   │   ├── data_loader.py             # Dataset loading & preprocessing
-│   │   └── collate_fn.py              # Collation for variable-length agent data
-│   │
-│   ├── models/
-│   │   ├── bi_gru_encoder.py          # Bi-GRU trajectory encoder
-│   │   └── dual_encoder_classifier.py # Dual-encoder classifier
-│   │
-│   └── utils/
-│       ├── train_utils.py             # Training, evaluation, scoring utilities
-│       └── logger.py                  # Logging + experiment folder setup
-│
-├── notebooks/                         # Jupyter notebooks for analysis & experiments
-│   └── (exploratory analysis)
-│
-├── tests/                             # Unit tests for models, data pipeline, utils
-│   └── (pytest-based test files)
-│
-├── experiments/                       # Auto-generated experiment folders
-│   ├── 20251120_113146/
-│   │   ├── checkpoint.pt
-│   │   ├── best_model.pt
-│   │   ├── last_model.pt
-│   │   ├── config.json
-│   │   └── train.log
-│
-├── requirements.txt
-└── README.md
-```
+# Clone the repository
+git clone git@bitbucket.org:nusuav/traj_interact_predict.git
+cd traj_interact_predict
 
----
+# Install system dependencies
+sudo apt update
+sudo apt install -y python3-venv python3-pip python3-pandas python3-sklearn python3-tqdm python3-matplotlib
 
-## 🧱 Environment Setup
+# Create and activate venv
+python3 -m venv ~/venvs/fasttask --system-site-packages
+source ~/venvs/fasttask/bin/activate
 
-It is recommended to use a conda environment.
+# Install PyTorch inside venv
+python -m pip install -U pip
+python -m pip install torch==2.10.0
 
-```bash
-# Activate the virtual environment you are using
-conda activate your_env
+# Add to ~/.bashrc
+source ~/venvs/fasttask/bin/activate
+export ROS2_INSTALL_PATH=/opt/ros/humble
+source ${ROS2_INSTALL_PATH}/setup.bash
+source ~/hifisim_ws/install/setup.bash
 
-# Install dependencies
-pip install -r requirements.txt
+# Close the terminal and open a new terminal or source ~/.bashrc to apply changes
+
+# Verify interpretor
+which python3
+python3 -c "import sys; print(sys.executable)"
+python3 -c "import rclpy; print(rclpy.__file__)"
+python3 -c "import torch; print(torch.__version__)"
 
 # Install Git Large File Storage (Git LFS)
 git lfs install
@@ -90,162 +58,90 @@ git lfs install
 git lfs pull
 ```
 
----
-
-## 🔁 Training (`train.py`)
-
-The training pipeline:
-
-1. Loads trajectory and relationship datasets from CSV files
-2. Generates agent-pair samples
-3. Extracts embeddings using a **Bi-GRU encoder** for each agent
-4. Feeds the embeddings into a **dual-encoder classifier**
-5. Trains with validation monitoring and optional early stopping
-6. Saves:
-   - `best_model.pt`
-   - `last_model.pt`
-   - `checkpoint.pt`
-   - `config.json`
-   - `train.log`
-7. Performs final test-set evaluation
+> ⚠️ Do **not** use `sudo pip install` for system Python.
 
 ---
 
-## ⚙️ Configuration
+## Training
 
-Key parameters inside `train.py`:
+### Run training via ROS2
 
-```python
-BATCH_SIZE = 32     # Number of samples per training batch
-EPOCHS = 50         # Total training iterations over the full dataset
-LR = 1e-3           # Learning rate for the optimizer
-VAL_SPLIT = 0.15    # Percentage of data reserved for validation during training
-TEST_SPLIT = 0.15   # Percentage of data reserved for final testing
-MAX_AGENTS = 6      # Maximum number of agents considered per sample for interaction prediction
-LOOKBACK = 50       # Number of past trajectory timesteps used to classify interactions
+```bash
+ros2 run traj_interact_predict train
+```
+
+All outputs (checkpoints, logs, configs) will be saved automatically in `experiments/`.
+
+---
+
+### Training Configuration
+
+Key parameters are set in the training script:
+
+```bash
+BATCH_SIZE = 32     # Number of samples per batch  
+EPOCHS = 50         # Training iterations over the dataset  
+LR = 1e-3           # Optimizer learning rate  
+VAL_SPLIT = 0.15    # Validation data split  
+TEST_SPLIT = 0.15   # Test data split  
+MAX_AGENTS = 6      # Max agents per sample  
+LOOKBACK = 50       # Number of past timesteps used  
 ```
 
 Encoder parameters:
 
-```python
-encoder_params = {
-    "input_size": 6,
-    "enc_hidden_size": 64,
-    "embedding_dim": 64,
-    "num_layers": 1,
+```bash
+encoder_params = {  
+    "input_size": 6,  
+    "enc_hidden_size": 64,  
+    "embedding_dim": 64,  
+    "num_layers": 1  
 }
 ```
 
 ---
 
-## ▶️ Running Training
+### Resuming Training
 
-To start a new training run:
-
-```bash
-python -m scripts.train
-```
-
-A new folder is automatically created inside `experiments/`:
+Set in the training script:
 
 ```bash
-experiments/20251120_103050/
+RESUME_TRAINING = True  
+exp_dir = "experiments/<previous_experiment>"  
 ```
 
-This folder contains all saved models, logs, and configuration files for that run.
+This restores model weights, optimizer state, and epoch number.
 
 ---
 
-## 🔁 Resuming Training
+## Inference
 
-To resume training from a previous experiment checkpoint, set in `train.py`:
-
-```python
-RESUME_TRAINING = True
-exp_dir = "experiments/20251119_184413"
-RESUME_CHECKPOINT = os.path.join(exp_dir, "checkpoint.pt")
-```
-
-This restores:
-
-- Model weights
-- Optimizer state
-- Epoch number
-- Training progress
-
-Training continues automatically from the saved checkpoint.
-
----
-
-## 📊 Evaluation
-
-After training completes, the script:
-
-- Evaluates on the test set
-- Computes classification metrics (accuracy, precision, recall, F1)
-- Logs results to `training.log`
-- Stores experiment configurations in `config.json`
-
-All outputs are saved inside the experiment folder.
-
----
-
-## 🔍 Inference
-
-### ⚙️ Inference Configuration
-
-The inference script provides two optional parameters for simulating scenarios with missing agents:
-
-- num_friendly_to_pad: Number of friendly agents to zero-pad during inference.
-- num_unauth_to_pad: Number of unauthorized agents to zero-pad.
-
-> Padding is applied by randomly selecting which agents to suppress, similar to the training-time padding strategy.
-
----
-
-### **Examples:**
-
-- Pad 2 friendly agents and 2 unauthorized agents:
-
-```python
-num_friendly_to_pad = 2  
-num_unauth_to_pad = 2
-```
-
-- Do not pad any agents:
-
-```python
-num_friendly_to_pad = 0  
-num_unauth_to_pad = 0
-```
-
----
-
-### ▶️ Running Inference (`inference.py`)
-
-Run inference with:
+### Run inference via ROS2
 
 ```bash
-python -m scripts.inference
+ros2 run traj_interact_predict inference
 ```
+
+Optional parameters allow simulating missing agents:
+
+- `num_friendly_to_pad` – number of friendly agents to zero-pad  
+- `num_unauth_to_pad` – number of unauthorized agents to zero-pad
 
 ---
 
-## 🚁 Running the Simulation Agent
+## Simulation Agent
 
-The simulation agent runs a trajectory tracking and interaction prediction loop using the trained dual-encoder Bi-GRU model.
+### Run the simulation agent via ROS2
 
-### ▶️ Command to Run
-
-```python
-python -m traj_interact_predict.simulation.sim_agent
+```bash
+ros2 run traj_interact_predict sim_agent
 ```
 
-### 📝 What It Does
+The simulation agent:
 
-- Initializes the simulation agent  
-- Tracks and generates trajectories of multiple agents  
-- Uses the trained interaction classifier to predict interaction pairs between friendly and unauthorized agents  
-- Prints out predicted interaction pairs with their confidence labels
+- Initializes agent tracking  
+- Generates trajectories for multiple agents  
+- Predicts interactions between friendly and unauthorized agents  
+- Prints predicted pairs with confidence probabilities 
 
 ---
